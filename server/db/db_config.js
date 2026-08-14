@@ -7,6 +7,8 @@ const pool = new pg.Pool({
 });
 
 const createTable = `
+
+
 CREATE TABLE IF NOT EXISTS repos(
    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
    user_id  UUID NOT NULL REFERENCES auth.users(id) ON UPDATE CASCADE ON DELETE CASCADE,

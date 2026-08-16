@@ -1,0 +1,47 @@
+ {
+    "user": {
+        "id": "9b8aa0eb-8b7b-4262-8bbb-b6ee4f590582",
+        "aud": "authenticated",
+        "role": "authenticated",
+        "email": "testingisgood702@gmail.com",
+        "email_confirmed_at": "2026-08-15T11:46:40.994688Z",
+        "phone": "",
+        "confirmation_sent_at": "2026-08-15T11:44:51.419729Z",
+        "confirmed_at": "2026-08-15T11:46:40.994688Z",
+        "last_sign_in_at": "2026-08-15T13:13:42.782578726Z",
+        "app_metadata": {
+            "provider": "email",
+            "providers": [
+                "email"
+            ]
+        },
+        "user_metadata": {
+            "email": "testingisgood702@gmail.com",
+            "email_verified": true,
+            "phone_verified": false,
+            "sub": "9b8aa0eb-8b7b-4262-8bbb-b6ee4f590582"
+        },
+        "identities": [
+            {
+                "identity_id": "b2500255-aac0-4298-8612-820d677635b7",
+                "id": "9b8aa0eb-8b7b-4262-8bbb-b6ee4f590582",
+                "user_id": "9b8aa0eb-8b7b-4262-8bbb-b6ee4f590582",
+                "identity_data": {
+                    "email": "testingisgood702@gmail.com",
+                    "email_verified": true,
+                    "phone_verified": false,
+                    "sub": "9b8aa0eb-8b7b-4262-8bbb-b6ee4f590582"
+                },
+                "provider": "email",
+                "last_sign_in_at": "2026-08-15T11:44:51.411524Z",
+                "created_at": "2026-08-15T11:44:51.41161Z",
+                "updated_at": "2026-08-15T11:44:51.41161Z",
+                "email": "testingisgood702@gmail.com"
+            }
+        ],
+        "created_at": "2026-08-15T11:44:51.385733Z",
+        "updated_at": "2026-08-15T13:13:42.852902Z",
+        "is_anonymous": false
+    },
+    "loading": false
+}

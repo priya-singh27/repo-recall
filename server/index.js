@@ -3,7 +3,13 @@ const app = express();
 const dotenv = require('dotenv').config();
 
 const {pool} = require('./db/db_config');
+app.use(express.json());
+app.use(express.urlencoded({extended:true}));
 
+
+const repo_router = require('./routes/repos');
+
+app.use('/repo', repo_router);
 
 
 process.on('SIGINT', async ()=>{

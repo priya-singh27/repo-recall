@@ -1,10 +1,13 @@
 const express = require('express');
 const app = express();
 const dotenv = require('dotenv').config();
+const cors = require('cors');
 
 const {pool} = require('./db/db_config');
 app.use(express.json());
 app.use(express.urlencoded({extended:true}));
+
+app.use(cors())
 
 
 const repo_router = require('./routes/repos');

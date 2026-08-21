@@ -9,11 +9,7 @@ export default function Homepage(){
     const [formData, setFormData] = useState({
       github_url:""
     });
-    const [githubData, setGithubData] =useState({
-      repo:"",
-      branches: "",
-      files: ""
-    });
+    const [githubData, setGithubData] =useState(null);
 
     const handleInputChange = (e)=>{
       const {name, value} = e.target;
@@ -24,24 +20,30 @@ export default function Homepage(){
     }
     
     const handleSubmit = async(e) => {
-      e.preventDeafult();
+      e.preventDefault();
+
+      const body={
+        "github_url":formData.github_url,
+      }
       const response = await fetch(`${API_URL}/repo/details`,{
         method:'POST',
         headers: {
           'Content-Type': 'application/json' 
         },
-        body: JSON.stringify(formData.github_url)
+        body: JSON.stringify(body)
       });
+      console.log("❌");
+      console.log(response)
       if(!response.ok){
         return;
       }
-      const json_data = await response;
+      const json_data = await response.json();
       console.log("🔥")
       console.log(json_data)
       setGithubData({
-        repo: json_data.repo,
-        branches: json_data.branches,
-        files: json_data.files,
+        repo: json_data["data"].repo,
+        branches: json_data["data"].branches,
+        files: json_data["data"].files,
       })
 
     }
@@ -61,11 +63,23 @@ export default function Homepage(){
           
           </div>
 
-          {githubData.branches!=="" && <div>
-            <p>{githubData.repo}</p>
-            <p>{githubData.branches}</p>
-            <p>{githubData.files}</p>
-          </div> }
+          {githubData ? <div>
+            <h2>Branches:</h2>
+            {githubData.branches.map((item)=><p>{item.name}</p>
+            )}
+            
+
+            <h2>Files: </h2>
+            {githubData.files.tree.map(item=>{
+              return<ol>
+                <li>
+                {item.path}
+                </li>
+              </ol>
+             
+            })}
+            
+          </div>:"" }
 
         </>
     )

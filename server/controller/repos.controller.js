@@ -1,5 +1,6 @@
 const fecth_repo = async (req, res) => {
     try{
+        console.log("Received req..");
         const github_url = req.body.github_url;
         //https://github.com/priya-singh27/az-assistant
         const arr = github_url.split("/");

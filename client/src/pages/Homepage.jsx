@@ -43,7 +43,6 @@ export default function Homepage(){
       setGithubData({
         repo: json_data["data"].repo,
         branches: json_data["data"].branches,
-        files: json_data["data"].files,
       })
 
     }
@@ -69,15 +68,7 @@ export default function Homepage(){
             )}
             
 
-            <h2>Files: </h2>
-            {githubData.files.tree.map(item=>{
-              return<ol>
-                <li>
-                {item.path}
-                </li>
-              </ol>
-             
-            })}
+            
             
           </div>:"" }
 

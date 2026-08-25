@@ -10,6 +10,7 @@ export default function Homepage(){
       github_url:""
     });
     const [githubData, setGithubData] =useState(null);
+    const [files, setFiles] = useState(null);
 
     const handleInputChange = (e)=>{
       const {name, value} = e.target;
@@ -32,18 +33,30 @@ export default function Homepage(){
         },
         body: JSON.stringify(body)
       });
-      console.log("❌");
-      console.log(response)
+      // console.log("❌");
+      // console.log(response)
       if(!response.ok){
         return;
       }
       const json_data = await response.json();
-      console.log("🔥")
-      console.log(json_data)
+      // console.log("🔥")
+      // console.log(json_data)
       setGithubData({
         repo: json_data["data"].repo,
         branches: json_data["data"].branches,
-      })
+      });
+
+      const files_response = await fetch(`${API_URL}/repo/files`,{
+        method:'POST',
+        headers: {
+          'Content-Type': 'application/json' 
+        },
+        body: JSON.stringify(body)
+      });
+      const files = await files_response.json();
+      console.log("Fetched file for the main branch: ")
+      console.log(files);
+      setFiles(files);
 
     }
     
@@ -65,10 +78,7 @@ export default function Homepage(){
           {githubData ? <div>
             <h2>Branches:</h2>
             {githubData.branches.map((item)=><p>{item.name}</p>
-            )}
-            
-
-            
+            )}``
             
           </div>:"" }
 

@@ -1,9 +1,11 @@
+const fs = require('fs/promises');
+
 
 const get_embedding = async (req,res) => {
     try{
         const {content_base_64} = req.body;
         const CHUNK_SIZE =4;
-        const buff = new Buffer(content_base_64, "base64").toString("utf-8");
+        const buff =  Buffer.from(content_base_64, "base64").toString("utf-8");
         console.log(buff);
 
         return res.json({
@@ -42,8 +44,8 @@ const fecth_repo = async (req, res) => {
         const branches_json = await branches_data.json();
         
 
-        console.log(repo_json);
-        console.log(branches_json);
+        // console.log(repo_json);
+        // console.log(branches_json);
 
 
         return res.status(200).json({
@@ -75,7 +77,7 @@ const fetch_files = async (req, res) => {
         const project_name = arr[4];
 
         const files_data = await fetch(
-            `https://api.github.com/repos/${owner}/${project_name}/git/trees/${branch}?recursive=1`);
+            `https://api.github.com/repos/${owner}/${project_name}/git/trees/main?recursive=1`);
 
         
         if(!files_data.ok){
@@ -85,8 +87,10 @@ const fetch_files = async (req, res) => {
         }
     
         const files_json = await files_data.json();
+        console.log("Files fetched successfully....")
 
         console.log(files_json);
+        await fs.writeFile('./logs/files.txt', JSON.stringify(files_json.tree));
 
         return res.status(200).json({
             message:"Successfully retrieved the repository's data",

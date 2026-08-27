@@ -21,15 +21,17 @@ const fecth_repo = async (req, res) => {
     try{
         console.log("Received req..");
         const github_url = req.body.github_url;
+        console.log(github_url)
 
         const arr = github_url.split("/");
+        console.log(arr)
         if(arr.length<4){
             return res.status(400).json({
                 message: "Invalid github url provided, could you please check the format. It should be in this format: https://github.com/{owner}/{name}"
             });
         }
-        const owner =  arr[3];
-        const project_name = arr[4];
+        const owner =  arr[4];
+        const project_name = arr[5];//https://api.github.com/repos/priya-singh27/indiaml-tracker
 
         const repo_data = await fetch(` https://api.github.com/repos/${owner}/${project_name}`);
         const branches_data = await fetch(`https://api.github.com/repos/${owner}/${project_name}/branches`);
@@ -64,8 +66,9 @@ const fecth_repo = async (req, res) => {
 const fetch_files = async (req, res) => {
     try{
         console.log("Received req..");
+        console.log(req.body);
         const github_url = req.body.github_url;
-        const branch = req.body.brnach;
+        const branch = req.body.branch;
         
         const arr = github_url.split("/");
         if(arr.length<4){
@@ -73,13 +76,15 @@ const fetch_files = async (req, res) => {
                 message: "Invalid github url provided, could you please check the format. It should be in this format: https://github.com/{owner}/{name}"
             });
         }
-        const owner =  arr[3];
-        const project_name = arr[4];
+        const owner =  arr[4];
+        const project_name = arr[5];
 
+        console.log("Making api call to fetch files...")
         const files_data = await fetch(
-            `https://api.github.com/repos/${owner}/${project_name}/git/trees/main?recursive=1`);
+            `https://api.github.com/repos/${owner}/${project_name}/git/trees/${branch}?recursive=1`);
 
-        
+        console.log("Received responseP: ");
+        console.log(files_data);
         if(!files_data.ok){
             return res.status(502).json({
                 message:"Failed to retrieve data from the external service. Please try again later."

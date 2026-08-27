@@ -10,7 +10,9 @@ export default function Homepage(){
       github_url:""
     });
     const [githubData, setGithubData] =useState(null);
-    const [files, setFiles] = useState(null);
+    const [filesFetched, setFilesFetched] = useState(null);
+    const [currBranch, setCurrBranch] = useState(null);
+    const [filesSelected, setFilesSelected] = useState(null);
 
     const handleInputChange = (e)=>{
       const {name, value} = e.target;
@@ -33,18 +35,24 @@ export default function Homepage(){
         },
         body: JSON.stringify(body)
       });
-      // console.log("❌");
-      // console.log(response)
+     
       if(!response.ok){
         return;
       }
       const json_data = await response.json();
-      // console.log("🔥")
-      // console.log(json_data)
+   
       setGithubData({
         repo: json_data["data"].repo,
         branches: json_data["data"].branches,
       });
+    }
+
+    const handleBranchSelect = async () => {
+
+      const body = {
+        "github_url":formData.github_url,
+        "branch" : currBranch
+      }
 
       const files_response = await fetch(`${API_URL}/repo/files`,{
         method:'POST',
@@ -53,10 +61,32 @@ export default function Homepage(){
         },
         body: JSON.stringify(body)
       });
+
+      console.log("Sent request...");
+      console.log("ℹ️")
+
       const files = await files_response.json();
-      console.log("Fetched file for the main branch: ")
+
+      console.log("👌🏼 Fetched file for the main branch: ")
       console.log(files);
-      setFiles(files);
+
+      setFilesFetched(files.data.files.tree);
+    }
+
+    const handleFileSelect = (e)=>{
+      const selectedOptions = Array.from(e.target.options)
+      .filter(option => option.selected)
+      .map(option => option.value);
+      
+      setFilesSelected(selectedOptions);
+    }
+
+    const handleFilesSubmit=()=>{
+      console.log("|||||||||||||||||");
+      console.log("\n");
+      console.log(filesSelected);
+      console.log("\n");
+      console.log("|||||||||||||||||");
 
     }
     
@@ -77,10 +107,40 @@ export default function Homepage(){
 
           {githubData ? <div>
             <h2>Branches:</h2>
-            {githubData.branches.map((item)=><p>{item.name}</p>
-            )}``
+
+            
+            <select 
+              value={currBranch} 
+              onChange={(e)=>{setCurrBranch(e.target.value)}}
+              style={{ width: '200px', height: '120px', padding: '5px' }}
+            >
+              {githubData.branches.map((item) => (
+                <option key={item.name} value={item.name}>
+                  {item.name}
+                </option>
+              ))}
+            </select>
+
+            <button onClick={handleBranchSelect} type="submit">Get Branch</button>
             
           </div>:"" }
+
+          {
+            filesFetched? <>
+             <h2>Files are: </h2>
+
+             <select multiple={true} onChange={handleFileSelect} value={filesSelected} style={{ width: '200px', height: '120px', padding: '5px' }}>
+              {filesFetched.map((item)=>(
+                <option key={item.name} value={item.name} >
+                  {item.name}
+                </option>
+              ))}
+             </select>
+
+             <button onClick={handleFilesSubmit} type="submit" >Submit</button>
+            </>
+            :""
+          }
 
         </>
     )

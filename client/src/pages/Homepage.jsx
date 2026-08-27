@@ -70,7 +70,7 @@ export default function Homepage(){
       console.log("👌🏼 Fetched file for the main branch: ")
       console.log(files);
 
-      setFilesFetched(files.data.files.tree);
+      setFilesFetched(files.data.files.tree.filter((item) => item.type === "blob"));
     }
 
     const handleFileSelect = (e)=>{
@@ -126,13 +126,14 @@ export default function Homepage(){
           </div>:"" }
 
           {
-            filesFetched? <>
+            filesFetched ? 
+            <>
              <h2>Files are: </h2>
 
-             <select multiple={true} onChange={handleFileSelect} value={filesSelected} style={{ width: '200px', height: '120px', padding: '5px' }}>
-              {filesFetched.map((item)=>(
-                <option key={item.name} value={item.name} >
-                  {item.name}
+             <select multiple={true} onChange={handleFileSelect} value={filesSelected} style={{ width: '200px', height: '120px', padding: '5px', color:"red"}}>
+              {filesFetched.map((item,idx)=>(
+                <option key={idx} value={item.url} >
+                  {item.url}
                 </option>
               ))}
              </select>

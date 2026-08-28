@@ -12,7 +12,7 @@ export default function Homepage(){
     const [githubData, setGithubData] =useState(null);
     const [filesFetched, setFilesFetched] = useState(null);
     const [currBranch, setCurrBranch] = useState(null);
-    const [filesSelected, setFilesSelected] = useState(null);
+    const [filesSelected, setFilesSelected] = useState([]);
 
     const handleInputChange = (e)=>{
       const {name, value} = e.target;
@@ -74,19 +74,33 @@ export default function Homepage(){
     }
 
     const handleFileSelect = (e)=>{
+      console.log(e.target.options);
       const selectedOptions = Array.from(e.target.options)
       .filter(option => option.selected)
       .map(option => option.value);
       
+      console.log("Selected options: ")
       setFilesSelected(selectedOptions);
+      console.log(selectedOptions);
     }
 
-    const handleFilesSubmit=()=>{
-      console.log("|||||||||||||||||");
-      console.log("\n");
-      console.log(filesSelected);
-      console.log("\n");
-      console.log("|||||||||||||||||");
+    const handleFilesSubmit= async()=>{
+      const body={
+        filesSelected
+      }
+
+      const embeddign_res = await fetch(`${API_URL}/repo/index`,{
+        method:'POST',
+        headers: {
+          'Content-Type': 'application/json' 
+        },
+        body: JSON.stringify(body)
+      });
+
+      const embedding_json = await embeddign_res.json();//raw json string to js object
+
+      console.log("Embeddign data...")
+      console.log(embedding_json);
 
     }
     
@@ -130,12 +144,14 @@ export default function Homepage(){
             <>
              <h2>Files are: </h2>
 
-             <select multiple={true} onChange={handleFileSelect} value={filesSelected} style={{ width: '200px', height: '120px', padding: '5px', color:"red"}}>
-              {filesFetched.map((item,idx)=>(
-                <option key={idx} value={item.url} >
-                  {item.url}
-                </option>
-              ))}
+             <select multiple={true} onChange={handleFileSelect} value={filesSelected} style={{ width: '100%', height: '200px', padding: '25px', color:"blue"}}>
+              
+              {filesFetched.map((item,idx)=>{
+                const item_obj_strign = JSON.stringify(item);
+                return <option key={idx} value={item_obj_strign} >
+                {item.path}
+              </option>
+              })}
              </select>
 
              <button onClick={handleFilesSubmit} type="submit" >Submit</button>

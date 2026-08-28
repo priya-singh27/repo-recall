@@ -3,13 +3,40 @@ const fs = require('fs/promises');
 
 const get_embedding = async (req,res) => {
     try{
-        const {content_base_64} = req.body;
-        const CHUNK_SIZE =4;
-        const buff =  Buffer.from(content_base_64, "base64").toString("utf-8");
-        console.log(buff);
+        const {filesSelected} = req.body;
+
+        console.log(filesSelected);
+        const embeddings = [];
+        for(let i=0; i<filesSelected.length; i++){
+            console.log(filesSelected[i])
+            const file_js_obj = JSON.parse(filesSelected[i]);
+            const blobRes  = await fetch(file_js_obj.url,{
+                headers: { 'User-Agent': 'repo-recall' },
+              });
+
+              const blob = await blobRes.json();
+
+              const text = Buffer.from(blob.content, 'base64').toString();
+
+              const ollamaRes = await fetch('http://localhost:11434/api/embeddings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  model: 'nomic-embed-text',
+                  prompt: text,
+                }),
+              });
+
+              console.log(ollamaRes);
+
+              const { embedding } = await ollamaRes.json();// number[] length 768
+              console.log(embedding)
+                embeddings.push({ url: filesSelected[i], embedding });   
+
+        }
 
         return res.json({
-            data: buff
+            data: embeddings
         })
         
     }catch(err){

@@ -1,0 +1,2 @@
+we have login/logout/log in with google etc for all these auth changes we ahve a listener "onAuthStateChange" this is callback supabse calls, and we update user.
+Also we are explicitly checking if there is session in localstorage with "getSession()", i.e “what session is in this browser right now?”

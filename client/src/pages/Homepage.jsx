@@ -5,7 +5,7 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 export default function Homepage(){
 
-    const {user, logout} = useAuth();
+    const {logout,session} = useAuth();
     const [formData, setFormData] = useState({
       github_url:""
     });
@@ -31,7 +31,8 @@ export default function Homepage(){
       const response = await fetch(`${API_URL}/repo/details`,{
         method:'POST',
         headers: {
-          'Content-Type': 'application/json' 
+          'Content-Type': 'application/json',
+          Authorization:`Bearer ${session.access_token}`
         },
         body: JSON.stringify(body)
       });
@@ -57,18 +58,13 @@ export default function Homepage(){
       const files_response = await fetch(`${API_URL}/repo/files`,{
         method:'POST',
         headers: {
-          'Content-Type': 'application/json' 
+          'Content-Type': 'application/json',
+          Authorization:`Bearer ${session.access_token}`
         },
         body: JSON.stringify(body)
       });
 
-      console.log("Sent request...");
-      console.log("ℹ️")
-
       const files = await files_response.json();
-
-      console.log("👌🏼 Fetched file for the main branch: ")
-      console.log(files);
 
       setFilesFetched(files.data.files.tree.filter((item) => item.type === "blob"));
     }
@@ -86,13 +82,15 @@ export default function Homepage(){
 
     const handleFilesSubmit= async()=>{
       const body={
-        filesSelected
+        filesSelected,
+        "github_url":formData.github_url,
       }
 
       const embeddign_res = await fetch(`${API_URL}/repo/index`,{
         method:'POST',
         headers: {
-          'Content-Type': 'application/json' 
+          'Content-Type': 'application/json',
+          Authorization:`Bearer ${session.access_token}`
         },
         body: JSON.stringify(body)
       });

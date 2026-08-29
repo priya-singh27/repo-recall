@@ -7,12 +7,14 @@ export const AuthContext = createContext(null);
 export function AuthProvider ({children}) {
     const [user, setUser]= useState(null);
     const [loading, setLoading] = useState(true);
+    const [session,setSession] = useState(null);
 
     useEffect(()=>{
         supabase.auth.getSession().then(({data, error})=>{
             if(error) setUser(null);
             else{
                 setUser(data.session?.user ?? null)
+                setSession(data.session)
             }
             setLoading(false);
         });
@@ -21,6 +23,7 @@ export function AuthProvider ({children}) {
             (event, session) => {
                 console.log(event);
                 setUser(session?.user ?? null);
+                setSession(session)
             }
         );
 
@@ -52,7 +55,7 @@ export function AuthProvider ({children}) {
 
     return (
         <AuthContext.Provider
-        value={{user, loading, signUp, login, loginWithGoogle, logout}}
+        value={{session, user, loading, signUp, login, loginWithGoogle, logout}}
         >
             {children}
         </AuthContext.Provider>

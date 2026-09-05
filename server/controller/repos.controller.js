@@ -1,23 +1,18 @@
 const fs = require('fs/promises');
 const { pool } = require('../db/db_config');
 const {addRepo, getRepo} = require('../repository/repos.repository')
-const {addChunks, deleteChunks} =require('../repository/chunks.repository')
+const {addChunks, deleteChunks} =require('../repository/chunks.repository');
+const parseGithubUrl = require('../utils/github_url_parser.utils');
+const downloadRepo = require('../utils/download_repo.utils');
 
 const get_embedding = async (req, res) => {
     try {
         const userId = req.user.id;
         const { filesSelected, github_url } = req.body;
 
-        const arr = github_url.split("/");
-        if (arr.length < 4) {
-            return res.status(400).json({
-                message: "Invalid github url provided, could you please check the format. It should be in this format: https://github.com/{owner}/{name}"
-            });
-        }
-        const owner = arr[3];
-        const project_name = arr[4];
+        const {repo_name ,owner} = parseGithubUrl(github_url);
 
-        const repo_row = await getRepo(userId, owner, project_name);
+        const repo_row = await getRepo(userId, owner, repo_name);
         if(!repo_row) return res.status(400).json({
             message:"Either user not logged in or provided incorrect github url"
         })
@@ -75,18 +70,10 @@ const fecth_repo = async (req, res) => {
         const github_url = req.body.github_url;
         const userId = req.user.id;
 
-        const arr = github_url.split("/");
-        if (arr.length < 4) {
-            return res.status(400).json({
-                message: "Invalid github url provided, could you please check the format. It should be in this format: https://github.com/{owner}/{name}"
-            });
-        }
-        const owner = arr[3];
-        const project_name = arr[4];//https://api.github.com/repos/priya-singh27/indiaml-tracker
-        //https://github.com/priya-singh27/az-assistant
+        const {repo_name ,owner} = parseGithubUrl(github_url);
 
-        const repo_data = await fetch(` https://api.github.com/repos/${owner}/${project_name}`);
-        const branches_data = await fetch(`https://api.github.com/repos/${owner}/${project_name}/branches`);
+        const repo_data = await fetch(` https://api.github.com/repos/${owner}/${repo_name}`);
+        const branches_data = await fetch(`https://api.github.com/repos/${owner}/${repo_name}/branches`);
 
         if (!repo_data.ok || !branches_data.ok) {
             return res.status(502).json({
@@ -95,7 +82,7 @@ const fecth_repo = async (req, res) => {
         }
         const repo_json = await repo_data.json();
 
-        const repo = await addRepo(userId, owner, project_name, github_url, 'pending');
+        const repo = await addRepo(userId, owner, repo_name, github_url, 'pending');
         console.log(repo);
 
         const branches_json = await branches_data.json();
@@ -119,19 +106,13 @@ const fetch_files = async (req, res) => {
         const github_url = req.body.github_url;
         const branch = req.body.branch;
 
-        const arr = github_url.split("/");
-        if (arr.length < 4) {
-            return res.status(400).json({
-                message: "Invalid github url provided, could you please check the format. It should be in this format: https://github.com/{owner}/{name}"
-            });
-        }
-        const owner = arr[3];
-        const project_name = arr[4];
+        const {repo_name ,owner} = parseGithubUrl(github_url);
 
+        await downloadRepo(owner, repo_name, branch);
 
-        const files_data = await fetch(
-            `https://api.github.com/repos/${owner}/${project_name}/git/trees/${branch}?recursive=1`);
-
+        const files_data = await fetch(`https://api.github.com/repos/${owner}/${repo_name}/git/trees/${branch}?recursive=1`);
+        
+        
 
         if (!files_data.ok) {
             return res.status(502).json({

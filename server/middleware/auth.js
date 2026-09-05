@@ -9,7 +9,7 @@ const supabase = createClient(
 const requireAuth = async (req, res, next) => {
     const auth_header = req.headers.authorization; 
     if(!auth_header?.startsWith('Bearer ')){
-        return resizeBy.status(401).json({
+        return res.status(401).json({
             message:"Not logged in"
         });
     }

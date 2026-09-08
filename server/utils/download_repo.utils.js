@@ -1,4 +1,3 @@
-const {exec} = require('node:child_process');
 const AdmZip = require("adm-zip");
 
 const downloadRepo = async (owner, repo_name, branch) => {
@@ -10,33 +9,39 @@ const downloadRepo = async (owner, repo_name, branch) => {
 
         console.log(res);
         const ab = await res.arrayBuffer();//type ab which means a block of memory 
-        const bytes = await Buffer.from(ab);//Buffer is extension of UInt8Array which has some addition methods
+        const bytes = Buffer.from(ab);//Buffer is extension of Uint8Array which has some addition methods
 
-        const zip = new AdmZip(bytes); 
-        console.log("After new AdmZip")
-        console.log(zip)
-        const arrEntry = zip.getEntries();
+        const zip = new AdmZip(bytes); //read the zip and lazyload the content on demand
 
-        console.log(arrEntry[1].isDirectory)
-        console.log(arrEntry[1].name);
-        console.log(arrEntry[1].getData())
-        console.log((new Date(arrEntry[1].header.toJSON()["time"])).toLocaleString());
+        const entries = zip.getEntries();
+        const root_prefix = entries[0].entryName.split('/')[0]+'/';
 
+        const entries_arr =[];
+        for(const entry of entries){
+            const path = entry.entryName.slice (root_prefix.length);
+            entries_arr.push({
+                name:entry.name,
+                path_:path,
+                size: entry.header.size,
+                time_modified:((new Date (entry.header.toJSON()["time"])).toLocaleString()),
+                isDir: entry.isDirectory,
+                getContent: ()=> zip.readAsText(entry, 'utf8'),
+            })
+        }
 
-
-        // console.log(arrEntry[3].name);
-
-        // arrEntry.forEach(item=>{
-
-        //     console.log(item)
-        //     console.log('\n');
-        // })
-        return;
+        return {entries_arr, zip};
 
     }catch(err){
         console.log("From downloadRepo...")
         console.log(err)
     }
+}
+
+const getEntriesData=(entries)=>{
+   for(const entry of entries){
+      const text_content = entry.getContent();
+
+   }
 }
 
 module.exports= downloadRepo;

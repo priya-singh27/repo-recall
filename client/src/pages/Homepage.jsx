@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { useAuth } from "../context/AuthContext"
+import { useAuth } from "../context/AuthContext";
+import FileTree from "../components/FileTree";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -13,6 +14,8 @@ export default function Homepage(){
     const [filesFetched, setFilesFetched] = useState(null);
     const [currBranch, setCurrBranch] = useState(null);
     const [filesSelected, setFilesSelected] = useState([]);
+    const [fileTree, setFileTree] = useState(null);
+
 
     const handleInputChange = (e)=>{
       const {name, value} = e.target;
@@ -66,24 +69,29 @@ export default function Homepage(){
 
       const files = await files_response.json();
 
-      setFilesFetched(files.data.files.tree.filter((item) => item.type === "blob"));
+      const tree = buildTree(files.data.files);
+      setFileTree(tree);
+      setFilesFetched(files.data.files); 
     }
 
-    const handleFileSelect = (e)=>{
-      console.log(e.target.options);
-      const selectedOptions = Array.from(e.target.options)
-      .filter(option => option.selected)
-      .map(option => option.value);
+    // const handleFileSelect = (e)=>{
+    //   console.log(e.target.options);
+    //   const selectedOptions = Array.from(e.target.options)
+    //   .filter(option => option.selected)
+    //   .map(option => option.value);
       
-      console.log("Selected options: ")
-      setFilesSelected(selectedOptions);
-      console.log(selectedOptions);
-    }
+    //   console.log("Selected options: ")
+    //   setFilesSelected(selectedOptions);
+    //   console.log(selectedOptions);
+    // }
 
     const handleFilesSubmit= async()=>{
+      console.log("Files selected: ");
+      console.log(filesSelected)
       const body={
         filesSelected,
         "github_url":formData.github_url,
+        "branch" : currBranch
       }
 
       const embeddign_res = await fetch(`${API_URL}/repo/index`,{
@@ -95,12 +103,42 @@ export default function Homepage(){
         body: JSON.stringify(body)
       });
 
-      const embedding_json = await embeddign_res.json();//raw json string to js object
+      const embedding_json = await embeddign_res.json();
 
       console.log("Embeddign data...")
       console.log(embedding_json);
 
     }
+    const toggleFile = (path) => {
+      setFilesSelected((prev) =>
+        prev.includes(path) ? prev.filter((p) => p !== path) : [...prev, path]
+      );
+    };
+
+    function buildTree(files) {
+      const root = { name: "", children: {}, files: [] };
+    
+      for (const item of files) {
+        if (item.isDir) continue;
+    
+        const parts = item.path.split("/").filter(Boolean);
+        let node = root;
+    
+        // walk/create folder nodes
+        for (let i = 0; i < parts.length - 1; i++) {
+          const folder = parts[i];
+          if (!node.children[folder]) {
+            node.children[folder] = { name: folder, children: {}, files: [] };
+          }
+          node = node.children[folder];
+        }
+    
+        node.files.push(item);
+      }
+    
+      return root;
+    }
+
     
     return(
         <>
@@ -142,15 +180,13 @@ export default function Homepage(){
             <>
              <h2>Files are: </h2>
 
-             <select multiple={true} onChange={handleFileSelect} value={filesSelected} style={{ width: '100%', height: '200px', padding: '25px', color:"blue"}}>
-              
-              {filesFetched.map((item,idx)=>{
-                const item_obj_strign = JSON.stringify(item);
-                return <option key={idx} value={item_obj_strign} >
-                {item.path}
-              </option>
-              })}
-             </select>
+             {fileTree && (
+                <FileTree
+                  node={fileTree}
+                  selected={filesSelected}
+                  onToggle={toggleFile}
+                />
+              )}
 
              <button onClick={handleFilesSubmit} type="submit" >Submit</button>
             </>

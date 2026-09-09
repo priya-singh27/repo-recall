@@ -26,8 +26,11 @@ const downloadRepo = async (owner, repo_name, branch) => {
                 time_modified:((new Date (entry.header.toJSON()["time"])).toLocaleString()),
                 isDir: entry.isDirectory,
                 getContent: ()=> zip.readAsText(entry, 'utf8'),
-            })
+            });
         }
+
+        console.log("From downloadRepo. Priting zip");
+        console.log(zip)
 
         return {entries_arr, zip};
 

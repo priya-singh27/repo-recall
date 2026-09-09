@@ -30,13 +30,12 @@ const get_embedding = async (req, res) => {
             message:"Either user not logged in or provided incorrect github url"
         })
 
-        // console.log("Repo row: ")
-        // console.log(repo_row);
-
         const existing_chunks = await deleteChunks(repo_row.id);
-            if(existing_chunks) {
-                console.log("Existing chunk deleted")
-            }
+        if(existing_chunks) {
+            console.log("Existing chunk deleted")
+        }
+
+        
         // for (let i = 0; i < filesSelected.length; i++) {
         //     const file_js_obj = JSON.parse(filesSelected[i]);
         //     const blobRes = await fetch(file_js_obj.url, {
@@ -91,12 +90,9 @@ const fecth_repo = async (req, res) => {
         if (!repo_data.ok || !branches_data.ok) {
             return res.status(502).json({
                 message: "Failed to retrieve data from the external service. Please try again later."
-            })
+            });
         }
         const repo_json = await repo_data.json();
-
-        const repo = await addRepo(userId, owner, repo_name, github_url, 'pending');
-        console.log(repo);
 
         const branches_json = await branches_data.json();
 
@@ -119,6 +115,9 @@ const fetch_files = async (req, res) => {
         const userId = req.user.id;
 
         const {repo_name ,owner} = parseGithubUrl(github_url);
+
+        const repo = await addRepo(userId, owner, repo_name, github_url, 'pending', branch);
+        console.log(repo);
 
         const {entries_arr, zip} = await downloadRepo(owner, repo_name, branch);
         const key = cacheKey(userId, owner, repo_name, branch);

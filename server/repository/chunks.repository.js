@@ -1,14 +1,14 @@
 const {pool} = require('../db/db_config')
 
-const addChunks = async (repo_id, path, content, start_line, end_line,embedding)=>{
+const addChunks = async (repo_id, content, start_line, end_line,embedding, indexed_file_id)=>{
     try{
         
         const {rows} = await pool.query(`
             INSERT INTO chunks
-            (repo_id, path, content, start_line, end_line,embedding)
+            (repo_id, content, start_line, end_line,embedding, indexed_file_id)
             VALUES ($1, $2, $3, $4, $5, $6)
             RETURNING id
-        `, [repo_id, path, content, start_line, end_line, embedding]);
+        `, [repo_id, content, start_line, end_line, embedding, indexed_file_id]);
 
         console.log("Rows from addChunks");
         console.log(rows)
@@ -21,14 +21,14 @@ const addChunks = async (repo_id, path, content, start_line, end_line,embedding)
     }
 }
 
-const deleteChunks = async(repo_id)=>{
+const deleteChunks = async(indexed_file_id)=>{
     try{
         const {rows} = await pool.query(
             `
             DELETE FROM chunks
-            WHERE repo_id=$1
+            WHERE indexed_file_id=$1
             RETURNING id
-            `, [repo_id]
+            `, [indexed_file_id]
         )
         if(rows.length>0){
             console.log("Wiped old indexes")

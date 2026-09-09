@@ -135,6 +135,9 @@ export default function Homepage(){
     
         node.files.push(item);
       }
+
+      console.log("Root")
+      console.log(root);
     
       return root;
     }

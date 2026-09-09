@@ -1,16 +1,16 @@
 const {pool} = require('../db/db_config')
 
 
-const addRepo = async(user_id, owner, project_name, github_url, status)=>{
+const addRepo = async(user_id, owner, project_name, github_url, status, branch)=>{
     try{
         const {rows} = await pool.query(`
             INSERT INTO repos 
-            (user_id, owner, name, github_url, status)
-            VALUES ($1, $2, $3, $4, $5)
-            ON CONFLICT (user_id, owner, name)
+            (user_id, owner, name, github_url, status, branch)
+            VALUES ($1, $2, $3, $4, $5, $6)
+            ON CONFLICT (user_id, owner, name, branch)
             DO UPDATE SET updated_at=NOW()
             RETURNING id
-            `,[user_id, owner, project_name, github_url,status]
+            `,[user_id, owner, project_name, github_url,status, branch]
         );
         console.log("Rows from addRepo");
         console.log(rows)
@@ -22,12 +22,12 @@ const addRepo = async(user_id, owner, project_name, github_url, status)=>{
     }
 }
 
-const getRepo = async(user_id, owner, project_name)=>{
+const getRepo = async(user_id, owner, project_name, branch)=>{
     try{
         const {rows} = await pool.query(`
             SELECT * FROM repos 
-            WHERE user_id=$1 AND owner=$2 AND name=$3
-            `,[user_id, owner, project_name]
+            WHERE user_id=$1 AND owner=$2 AND name=$3 AND branch=$4
+            `,[user_id, owner, project_name, branch]
         );
         console.log("Rows from getRepo");
         console.log(rows)

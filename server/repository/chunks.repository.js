@@ -1,6 +1,6 @@
-const {pool} = require('../db/db_config')
+const {pool} = require('../db/db_config');
 
-const addChunks = async (indexed_file_id, content, start_line, end_line,embedding, indexed_file_id)=>{
+const addChunks = async (indexed_file_id, content, start_line, end_line,embedding)=>{
     try{
         
         const {rows} = await pool.query(`

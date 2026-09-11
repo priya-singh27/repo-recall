@@ -5,21 +5,42 @@ const addIndexedFiles = async (repo_id, path, active, content_hash) =>{
         const {rows} = await pool.query(
             `
                INSERT INTO indexed_files
-               (repo_id, path, active, content_has)
+               (repo_id, path, active, content_hash)
                VALUES ($1, $2, $3, $4)
-               DO UPDATE SET updated_at=NOW()
+               ON CONFLICT (repo_id, path) DO UPDATE
+               SET content_hash = EXCLUDED.content_hash,
+                updated_at = NOW()
                RETURNING id
             `,
             [repo_id, path, active, content_hash]
         );
 
         console.log("It's from addIndexedFiles");
-        console.log(rows)
+        console.log(rows);
         if(rows.length>0) return rows[0];
 
         return null;
     }catch(err){
         console.log(err);
+    }
+}
+
+const updateContentHash = async(repo_id,path,content_hash)=>{
+    try{
+        const {rows} = await pool.query(
+            `
+             UPDATE indexed_files 
+             SET content_hash=$1
+             WHERE repo_id=$2 AND path=$3
+             RETURNING id
+            `,[content_hash, repo_id,path]
+        );
+
+        if(rows.length>0) return rows[0];
+
+        return null;
+    }catch(err){
+        console.log(err)
     }
 }
 
@@ -45,5 +66,6 @@ const getIndexedFile = async(repo_id, path) => {
 
 module.exports={
     addIndexedFiles,
-    getIndexedFile
+    getIndexedFile,
+    updateContentHash
 }

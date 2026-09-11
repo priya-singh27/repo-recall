@@ -6,7 +6,7 @@ const parseGithubUrl = require('../utils/github_url_parser.utils');
 const downloadRepo = require('../utils/download_repo.utils');
 const { cacheKey, setRepoCache, getRepoCache } = require('../utils/repo_cache');
 const crypto = require('crypto');
-const { getIndexedFile } = require('../repository/indexed_files.repository');
+const { getIndexedFile, addIndexedFiles, updateContentHash } = require('../repository/indexed_files.repository');
 const { embed_file } = require('../utils/embed_data');
 
 const embed_content = async (req, res) => {
@@ -25,27 +25,27 @@ const embed_content = async (req, res) => {
 
         for(const file of filesSelected){
             const entry = entries_arr.find(curr=> curr.path_===file);
+            if (!entry || entry.isDir) continue;
+
             const content = entry.getContent();
             const curr_content_hash= crypto.createHash('sha256').update(content,'utf-8').digest('hex')
 
             const indexed_file = await getIndexedFile(repo_id,file);
 
-            let needEmbeddig=false;
+             //embed current file path's content if either content of the file changed or didnt exist
             if(!indexed_file){
-                needEmbeddig=true;
+                const indexed_file_row = await addIndexedFiles(repo_id,file, true, curr_content_hash)
+                await embed_file(indexed_file_row.id, content);
 
             }else{
                 const stored_content_hash = indexed_file.content_hash;
                 if(stored_content_hash!==curr_content_hash){
+                   
                     const existing_chunks = await deleteChunks(indexed_file.id);
-                    needEmbeddig=true;
+                    await embed_file(indexed_file.id, content);
+                    await updateContentHash(repo_id,file,curr_content_hash);
                 }
             }
-
-            if(needEmbeddig){
-                await embed_file(indexed_file.id, content, file);//embed current file path's content if either content of the file changed or didnt exist
-            }
-
 
         }
 
@@ -55,6 +55,7 @@ const embed_content = async (req, res) => {
 
     } catch (err) {
         console.log(err)
+        return res.status(500);
     }
 }
 
@@ -86,6 +87,7 @@ const fecth_repo = async (req, res) => {
         })
     } catch (err) {
         console.log(err);
+        return res.status(500);
     }
 
 }
@@ -98,7 +100,6 @@ const fetch_files = async (req, res) => {
         const {repo_name ,owner} = parseGithubUrl(github_url);
 
         const repo_id = await addRepo(userId, owner, repo_name, github_url, 'pending', branch);
-        console.log(repo);
 
         const {entries_arr, zip} = await downloadRepo(owner, repo_name, branch);
         const key = cacheKey(userId, owner, repo_name, branch);
@@ -124,6 +125,7 @@ const fetch_files = async (req, res) => {
         })
     } catch (err) {
         console.log(err);
+        return res.status(500);
     }
 }
 

@@ -1,6 +1,6 @@
 const { addChunks } = require("../repository/chunks.repository");
 
-const embed_file = async(indexed_file_id, content,path)=>{
+const embed_file = async(indexed_file_id, content)=>{
     try{
 
         const lines = content.split('\n');
@@ -19,7 +19,7 @@ const embed_file = async(indexed_file_id, content,path)=>{
             });
             const {embedding} = await ollamaRes.json();// number[] length 768
 
-            const chunks_row =await addChunks(indexed_file_id,path, chunkData, start+1, end, JSON.stringify(embedding));
+            const chunks_row =await addChunks(indexed_file_id, chunkData, start+1, end, JSON.stringify(embedding));
         }
 
         return {message:"Chunks added successfully"};

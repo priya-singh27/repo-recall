@@ -1,7 +1,7 @@
 const cache = new Map();
 
-function cacheKey(userId, owner, repo, branch ){
-    return `${userId}:${owner}/${repo}:${branch}`
+function cacheKey(userId, owner, repo_name, branch ){
+    return `${userId}:${owner}/${repo_name}:${branch}`
 }
 
 function setRepoCache(key,zip,entries_arr){

@@ -5,11 +5,14 @@ const {addChunks, deleteChunks} =require('../repository/chunks.repository');
 const parseGithubUrl = require('../utils/github_url_parser.utils');
 const downloadRepo = require('../utils/download_repo.utils');
 const { cacheKey, setRepoCache, getRepoCache } = require('../utils/repo_cache');
+const crypto = require('crypto');
+const { getIndexedFile } = require('../repository/indexed_files.repository');
+const { embed_file } = require('../utils/embed_data');
 
-const get_embedding = async (req, res) => {
+const embed_content = async (req, res) => {
     try {
         const userId = req.user.id;
-        const { filesSelected, github_url, branch } = req.body;
+        const { filesSelected, github_url, branch, repo_id } = req.body;
 
         const {repo_name ,owner} = parseGithubUrl(github_url);
 
@@ -23,50 +26,28 @@ const get_embedding = async (req, res) => {
         for(const file of filesSelected){
             const entry = entries_arr.find(curr=> curr.path_===file);
             const content = entry.getContent();
+            const curr_content_hash= crypto.createHash('sha256').update(content,'utf-8').digest('hex')
+
+            const indexed_file = await getIndexedFile(repo_id,file);
+
+            let needEmbeddig=false;
+            if(!indexed_file){
+                needEmbeddig=true;
+
+            }else{
+                const stored_content_hash = indexed_file.content_hash;
+                if(stored_content_hash!==curr_content_hash){
+                    const existing_chunks = await deleteChunks(indexed_file.id);
+                    needEmbeddig=true;
+                }
+            }
+
+            if(needEmbeddig){
+                await embed_file(indexed_file.id, content, file);//embed current file path's content if either content of the file changed or didnt exist
+            }
+
+
         }
-
-        const repo_row = await getRepo(userId, owner, repo_name);
-        if(!repo_row) return res.status(400).json({
-            message:"Either user not logged in or provided incorrect github url"
-        })
-
-        const existing_chunks = await deleteChunks(repo_row.id);
-        if(existing_chunks) {
-            console.log("Existing chunk deleted")
-        }
-
-        
-        // for (let i = 0; i < filesSelected.length; i++) {
-        //     const file_js_obj = JSON.parse(filesSelected[i]);
-        //     const blobRes = await fetch(file_js_obj.url, {
-        //         headers: { 'User-Agent': 'repo-recall' },
-        //     });
-            
-
-        //     const blob = await blobRes.json();
-        //     const text = Buffer.from(blob.content, 'base64').toString('utf-8');
-
-        //     const lines = text.split('\n');
-        //     const CHUNK_LINES = 40;
-        //     for(let start=0; start<lines.length; start+=CHUNK_LINES){
-        //         const end = Math.min(start+CHUNK_LINES, lines.length);
-        //         const chunkData = lines.slice(start,end).join('\n');
-
-        //         const ollamaRes = await fetch('http://localhost:11434/api/embeddings', {
-        //             method: 'POST',
-        //             headers: { 'Content-Type': 'application/json' },
-        //             body: JSON.stringify({
-        //                 model: 'nomic-embed-text',
-        //                 prompt: chunkData,
-        //             }),
-        //         });
-        //         const {embedding} = await ollamaRes.json();// number[] length 768
-
-        //         const chunks_row =await addChunks(repo_row.id, file_js_obj.path, chunkData, start+1, end, JSON.stringify(embedding));
-        //     }
-            
-
-        // }
 
         return res.json({
             message:"Files are embedded and stored successfully",
@@ -116,7 +97,7 @@ const fetch_files = async (req, res) => {
 
         const {repo_name ,owner} = parseGithubUrl(github_url);
 
-        const repo = await addRepo(userId, owner, repo_name, github_url, 'pending', branch);
+        const repo_id = await addRepo(userId, owner, repo_name, github_url, 'pending', branch);
         console.log(repo);
 
         const {entries_arr, zip} = await downloadRepo(owner, repo_name, branch);
@@ -137,6 +118,7 @@ const fetch_files = async (req, res) => {
         return res.status(200).json({
             message: "Successfully retrieved the repository's data",
             data: {
+                repo_id,
                 files: files_arr
             }
         })
@@ -148,6 +130,6 @@ const fetch_files = async (req, res) => {
 module.exports = {
     fecth_repo,
     fetch_files,
-    get_embedding
+    embed_content
 }
 

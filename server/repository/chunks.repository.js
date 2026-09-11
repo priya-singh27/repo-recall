@@ -1,14 +1,14 @@
 const {pool} = require('../db/db_config')
 
-const addChunks = async (repo_id, content, start_line, end_line,embedding, indexed_file_id)=>{
+const addChunks = async (indexed_file_id, content, start_line, end_line,embedding, indexed_file_id)=>{
     try{
         
         const {rows} = await pool.query(`
             INSERT INTO chunks
-            (repo_id, content, start_line, end_line,embedding, indexed_file_id)
-            VALUES ($1, $2, $3, $4, $5, $6)
+            (indexed_file_id,content, start_line, end_line,embedding)
+            VALUES ($1, $2, $3, $4, $5)
             RETURNING id
-        `, [repo_id, content, start_line, end_line, embedding, indexed_file_id]);
+        `, [indexed_file_id, content, start_line, end_line, embedding]);
 
         console.log("Rows from addChunks");
         console.log(rows)

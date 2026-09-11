@@ -91,7 +91,8 @@ export default function Homepage(){
       const body={
         filesSelected,
         "github_url":formData.github_url,
-        "branch" : currBranch
+        "branch" : currBranch,
+        repo_id: filesFetched.repo_id
       }
 
       const embeddign_res = await fetch(`${API_URL}/repo/index`,{

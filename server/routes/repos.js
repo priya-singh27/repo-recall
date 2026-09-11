@@ -1,4 +1,4 @@
-const {fecth_repo, fetch_files, get_embedding} = require('../controller/repos.controller');
+const {fecth_repo, fetch_files, embed_content} = require('../controller/repos.controller');
 const express = require('express');
 const {requireAuth}= require('../middleware/auth')
 
@@ -8,6 +8,6 @@ router.use(requireAuth);
 
 router.post('/details', fecth_repo);
 router.post('/files', fetch_files);
-router.post('/index', get_embedding);
+router.post('/index', embed_content);
 
 module.exports = router;

@@ -23,6 +23,27 @@ const addIndexedFiles = async (repo_id, path, active, content_hash) =>{
     }
 }
 
+const getIndexedFile = async(repo_id, path) => {
+    try{
+        const {rows} = await pool.query(
+            `
+                SELECT * FROM indexed_files
+                WHERE repo_id=$1 AND path=$2
+            `,
+            [repo_id, path]
+        );
+
+        console.log("It's from getIndexedFile");
+        console.log(rows);
+
+        if(rows.length>0) return rows[0];
+        return null;
+    }catch(err){
+        console.log(err)
+    }
+}
+
 module.exports={
-    addIndexedFiles
+    addIndexedFiles,
+    getIndexedFile
 }

@@ -6,13 +6,16 @@ const parseGithubUrl = require('../utils/github_url_parser.utils');
 const downloadRepo = require('../utils/download_repo.utils');
 const { cacheKey, setRepoCache, getRepoCache } = require('../utils/repo_cache');
 const crypto = require('crypto');
-const { getIndexedFile, addIndexedFiles, updateContentHash } = require('../repository/indexed_files.repository');
+const { getIndexedFile, addIndexedFiles, updateContentHash, getAllIndexedFileForRepo } = require('../repository/indexed_files.repository');
 const { embed_file } = require('../utils/embed_data');
 
 const embed_content = async (req, res) => {
     try {
         const userId = req.user.id;
         const { filesSelected, github_url, branch, repo_id } = req.body;
+
+        console.log(`Printing req.body of embed_content`);
+        console.log(repo_id)
 
         const {repo_name ,owner} = parseGithubUrl(github_url);
 
@@ -22,6 +25,16 @@ const embed_content = async (req, res) => {
             return res.status(410).json({ message: "Session expired — pick branch again" });
         }
         const { entries_arr } = cached;
+
+        const allExistingIndexedFiles = await getAllIndexedFileForRepo(repo_id);
+        const inactiveFiles=[];
+        for(const file of allExistingIndexedFiles){
+            const existingFileIsSelected = filesSelected.find(item => item === file.path)
+            if(!existingFileIsSelected ) inactiveFiles.push(file.path);
+        }
+
+        console.log("❤️")
+        console.log(inactiveFiles);
 
         for(const file of filesSelected){
             const entry = entries_arr.find(curr=> curr.path_===file);
@@ -34,10 +47,15 @@ const embed_content = async (req, res) => {
 
              //embed current file path's content if either content of the file changed or didnt exist
             if(!indexed_file){
-                const indexed_file_row = await addIndexedFiles(repo_id,file, true, curr_content_hash)
+
+                const indexed_file_row = await addIndexedFiles(repo_id, file, true, curr_content_hash);
+                if(!indexed_file_row) return res.status(400).json({
+                    message:`Couldn't add ${file} to the indexed files table`
+                });
                 await embed_file(indexed_file_row.id, content);
 
             }else{
+                console.log(indexed_file)
                 const stored_content_hash = indexed_file.content_hash;
                 if(stored_content_hash!==curr_content_hash){
                    
@@ -100,8 +118,18 @@ const fetch_files = async (req, res) => {
         const {repo_name ,owner} = parseGithubUrl(github_url);
 
         const repo_id = await addRepo(userId, owner, repo_name, github_url, 'pending', branch);
+        if(!repo_id){
+            return res.status(400).json({
+                message:"Couldn't add repo to db"
+            })
+        }
 
         const {entries_arr, zip} = await downloadRepo(owner, repo_name, branch);
+        if(!entries_arr || !zip){
+            return res.status(400).json({
+                message:"Failed to download zip file"
+            })
+        }
         const key = cacheKey(userId, owner, repo_name, branch);
         setRepoCache(key, zip, entries_arr)
 

@@ -71,7 +71,9 @@ export default function Homepage(){
 
       const tree = buildTree(files.data.files);
       setFileTree(tree);
-      setFilesFetched(files.data.files); 
+      console.log("❌❌❌ Response from /repo/files");
+      console.log(files.data);
+      setFilesFetched(files.data); 
     }
 
     // const handleFileSelect = (e)=>{
@@ -86,13 +88,19 @@ export default function Homepage(){
     // }
 
     const handleFilesSubmit= async()=>{
-      console.log("Files selected: ");
-      console.log(filesSelected)
+      console.log("Files fetched: ");
+      console.log(filesFetched);
+
+      console.log("Github Data")
+      console.log(githubData);
+
+      console.log("Files selected")
+      console.log(filesSelected);
       const body={
         filesSelected,
         "github_url":formData.github_url,
         "branch" : currBranch,
-        repo_id: filesFetched.repo_id
+        repo_id: filesFetched.repo_id.id
       }
 
       const embeddign_res = await fetch(`${API_URL}/repo/index`,{
@@ -180,7 +188,7 @@ export default function Homepage(){
           </div>:"" }
 
           {
-            filesFetched ? 
+            filesFetched && filesFetched.files ? 
             <>
              <h2>Files are: </h2>
 

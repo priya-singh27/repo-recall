@@ -1,7 +1,7 @@
 const {pool} = require('../db/db_config')
 
 
-const addRepo = async(user_id, owner, project_name, github_url, status, branch)=>{
+const addRepo = async(user_id, owner, repo_name, github_url, status, branch)=>{
     try{
         const {rows} = await pool.query(`
             INSERT INTO repos 
@@ -10,7 +10,7 @@ const addRepo = async(user_id, owner, project_name, github_url, status, branch)=
             ON CONFLICT (user_id, owner, name, branch)
             DO UPDATE SET updated_at=NOW()
             RETURNING id
-            `,[user_id, owner, project_name, github_url,status, branch]
+            `,[user_id, owner, repo_name, github_url,status, branch]
         );
         console.log("Rows from addRepo");
         console.log(rows)

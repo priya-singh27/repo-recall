@@ -3,6 +3,7 @@ const {pool} = require('../db/db_config');
 const addIndexedFiles = async (repo_id, path, active, content_hash) =>{
     try{
         const {rows} = await pool.query(
+            //EXCLUDED is the row i tried to insert but a row with the combination of repo_id an path already exists so we'll update the content hash
             `
                INSERT INTO indexed_files
                (repo_id, path, active, content_hash)
@@ -64,8 +65,29 @@ const getIndexedFile = async(repo_id, path) => {
     }
 }
 
+const getAllIndexedFileForRepo = async(repo_id) => {
+    try{
+        const {rows} = await pool.query(
+            `
+                SELECT path FROM indexed_files
+                WHERE repo_id=$1 
+            `,
+            [repo_id]
+        );
+
+        console.log("It's from getIndexedFile");
+        console.log(rows);
+
+        if(rows.length>0) return rows;
+        return null;
+    }catch(err){
+        console.log(err)
+    }
+}
+
 module.exports={
     addIndexedFiles,
     getIndexedFile,
-    updateContentHash
+    updateContentHash,
+    getAllIndexedFileForRepo
 }

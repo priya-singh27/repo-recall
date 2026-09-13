@@ -6,7 +6,7 @@ const parseGithubUrl = require('../utils/github_url_parser.utils');
 const downloadRepo = require('../utils/download_repo.utils');
 const { cacheKey, setRepoCache, getRepoCache } = require('../utils/repo_cache');
 const crypto = require('crypto');
-const { getIndexedFile, addIndexedFiles, updateContentHash, getAllIndexedFileForRepo } = require('../repository/indexed_files.repository');
+const { getIndexedFile, addIndexedFiles, updateContentHash, getAllIndexedFileForRepo, updateActive } = require('../repository/indexed_files.repository');
 const { embed_file } = require('../utils/embed_data');
 
 const embed_content = async (req, res) => {
@@ -28,13 +28,12 @@ const embed_content = async (req, res) => {
 
         const allExistingIndexedFiles = await getAllIndexedFileForRepo(repo_id);
         const inactiveFiles=[];
-        for(const file of allExistingIndexedFiles){
+        for(const file of allExistingIndexedFiles ?? []){
             const existingFileIsSelected = filesSelected.find(item => item === file.path)
             if(!existingFileIsSelected ) inactiveFiles.push(file.path);
         }
 
-        console.log("❤️")
-        console.log(inactiveFiles);
+        await updateActive(repo_id, inactiveFiles, false);
 
         for(const file of filesSelected){
             const entry = entries_arr.find(curr=> curr.path_===file);
@@ -52,10 +51,10 @@ const embed_content = async (req, res) => {
                 if(!indexed_file_row) return res.status(400).json({
                     message:`Couldn't add ${file} to the indexed files table`
                 });
-                await embed_file(indexed_file_row.id, content);
-
+                await embed_file(indexed_file_row.id, content);//this throws error and goes to catch block
+                
             }else{
-                console.log(indexed_file)
+                console.log(indexed_file);
                 const stored_content_hash = indexed_file.content_hash;
                 if(stored_content_hash!==curr_content_hash){
                    
@@ -73,7 +72,8 @@ const embed_content = async (req, res) => {
 
     } catch (err) {
         console.log(err)
-        return res.status(500);
+        return res.status(500).json({ message: err.message});
+        
     }
 }
 
@@ -105,7 +105,7 @@ const fecth_repo = async (req, res) => {
         })
     } catch (err) {
         console.log(err);
-        return res.status(500);
+        return res.status(500).json({ message: err.message});
     }
 
 }
@@ -153,7 +153,7 @@ const fetch_files = async (req, res) => {
         })
     } catch (err) {
         console.log(err);
-        return res.status(500);
+        return res.status(500).json({ message: err.message});
     }
 }
 

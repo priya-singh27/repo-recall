@@ -22,7 +22,7 @@ const parseGithubUrl = (repo_url) => {
 
         return {owner, repo_name};
     }catch(err){
-        return null;
+        throw err;
     }
 }
 

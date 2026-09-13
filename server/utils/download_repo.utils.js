@@ -36,7 +36,8 @@ const downloadRepo = async (owner, repo_name, branch) => {
 
     }catch(err){
         console.log("From downloadRepo...")
-        console.log(err)
+        console.log(err);
+        throw err;
     }
 }
 

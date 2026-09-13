@@ -68,7 +68,7 @@ export function useAuth() {
     if(!ctx){
         throw new Error("useAuth must be used inside Auth Provider")
     }
-    console.log(`Context from useAuth: ${JSON.stringify(ctx)}`);
+    // console.log(`Context from useAuth: ${JSON.stringify(ctx)}`);
 
     return ctx;
 }

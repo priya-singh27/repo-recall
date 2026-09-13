@@ -26,7 +26,7 @@ const addIndexedFiles = async (repo_id, path, active, content_hash) =>{
     }
 }
 
-const updateActive = async (repo_id,files, active)=>{
+const updateFilesActive = async (repo_id,files, active)=>{
     try{
         const updatedFiles=[]
         for(const file of files){
@@ -44,6 +44,28 @@ const updateActive = async (repo_id,files, active)=>{
         }
 
         if(updatedFiles.length>0) return updatedFiles;
+        
+
+        return null;
+    }catch(err){
+        console.log(err)
+    }
+}
+
+const updateActive = async (repo_id,path, active)=>{
+    try{
+        const {rows} = await pool.query(
+            `
+                UPDATE indexed_files 
+                SET active=$1
+                WHERE repo_id=$2 AND path=$3
+                RETURNING id
+            `,
+            [active, repo_id, path]
+        );
+
+
+        if(rows.length>0) return rows[0];
         
 
         return null;
@@ -116,5 +138,6 @@ module.exports={
     getIndexedFile,
     updateContentHash,
     getAllIndexedFileForRepo,
-    updateActive
+    updateActive,
+    updateFilesActive
 }

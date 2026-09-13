@@ -71,8 +71,7 @@ export default function Homepage(){
 
       const tree = buildTree(files.data.files);
       setFileTree(tree);
-      console.log("❌❌❌ Response from /repo/files");
-      console.log(files.data);
+   
       setFilesFetched(files.data); 
     }
 
@@ -100,7 +99,7 @@ export default function Homepage(){
         filesSelected,
         "github_url":formData.github_url,
         "branch" : currBranch,
-        repo_id: filesFetched.repo_id.id
+        repo_id: filesFetched.repo_id
       }
 
       const embeddign_res = await fetch(`${API_URL}/repo/index`,{

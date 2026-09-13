@@ -6,8 +6,9 @@ const parseGithubUrl = require('../utils/github_url_parser.utils');
 const downloadRepo = require('../utils/download_repo.utils');
 const { cacheKey, setRepoCache, getRepoCache } = require('../utils/repo_cache');
 const crypto = require('crypto');
-const { getIndexedFile, addIndexedFiles, updateContentHash, getAllIndexedFileForRepo, updateActive } = require('../repository/indexed_files.repository');
+const { getIndexedFile, addIndexedFiles, updateContentHash, getAllIndexedFileForRepo, updateFilesActive, updateActive } = require('../repository/indexed_files.repository');
 const { embed_file } = require('../utils/embed_data');
+const { unauthorizedResponse, badRequestResponse, successResponse, serverErrorResponse, externalServiceResponse, goneResponse } = require('../utils/response');
 
 const embed_content = async (req, res) => {
     try {
@@ -22,7 +23,7 @@ const embed_content = async (req, res) => {
         const key = cacheKey(userId, owner, repo_name, branch);
         const cached = getRepoCache(key);
         if (!cached) {
-            return res.status(410).json({ message: "Session expired — pick branch again" });
+            return goneResponse(res, "Session expired — pick branch again" )
         }
         const { entries_arr } = cached;
 
@@ -33,7 +34,7 @@ const embed_content = async (req, res) => {
             if(!existingFileIsSelected ) inactiveFiles.push(file.path);
         }
 
-        await updateActive(repo_id, inactiveFiles, false);
+        await updateFilesActive(repo_id, inactiveFiles, false);
 
         for(const file of filesSelected){
             const entry = entries_arr.find(curr=> curr.path_===file);
@@ -48,13 +49,11 @@ const embed_content = async (req, res) => {
             if(!indexed_file){
 
                 const indexed_file_row = await addIndexedFiles(repo_id, file, true, curr_content_hash);
-                if(!indexed_file_row) return res.status(400).json({
-                    message:`Couldn't add ${file} to the indexed files table`
-                });
+                if(!indexed_file_row) return badRequestResponse(res, `Couldn't add ${file} to the indexed files table`);
+            
                 await embed_file(indexed_file_row.id, content);//this throws error and goes to catch block
                 
             }else{
-                console.log(indexed_file);
                 const stored_content_hash = indexed_file.content_hash;
                 if(stored_content_hash!==curr_content_hash){
                    
@@ -63,16 +62,15 @@ const embed_content = async (req, res) => {
                     await updateContentHash(repo_id,file,curr_content_hash);
                 }
             }
+            await updateActive(repo_id, file, true);
 
         }
 
-        return res.json({
-            message:"Files are embedded and stored successfully",
-        })
-
+        return successResponse(res, {}, "Files are embedded and stored successfully")
+         
     } catch (err) {
-        console.log(err)
-        return res.status(500).json({ message: err.message});
+        console.log(err);
+        return serverErrorResponse(res, err.message)
         
     }
 }
@@ -87,25 +85,24 @@ const fecth_repo = async (req, res) => {
         const repo_data = await fetch(` https://api.github.com/repos/${owner}/${repo_name}`);
         const branches_data = await fetch(`https://api.github.com/repos/${owner}/${repo_name}/branches`);
 
-        if (!repo_data.ok || !branches_data.ok) {
-            return res.status(502).json({
-                message: "Failed to retrieve data from the external service. Please try again later."
-            });
-        }
+        if (!repo_data.ok || !branches_data.ok) 
+            return externalServiceResponse(res,"Failed to retrieve data from the external service. Please try again later.")
+
         const repo_json = await repo_data.json();
 
         const branches_json = await branches_data.json();
 
-        return res.status(200).json({
-            message: "Successfully retrieved the repository's data",
-            data: {
+        return successResponse(
+            res, 
+            {
                 repo: repo_json,
                 branches: branches_json,
-            }
-        })
+            },
+            "Successfully retrieved the repository's data"
+        )
     } catch (err) {
         console.log(err);
-        return res.status(500).json({ message: err.message});
+        return serverErrorResponse(res,err.message)
     }
 
 }
@@ -118,17 +115,14 @@ const fetch_files = async (req, res) => {
         const {repo_name ,owner} = parseGithubUrl(github_url);
 
         const repo_id = await addRepo(userId, owner, repo_name, github_url, 'pending', branch);
-        if(!repo_id){
-            return res.status(400).json({
-                message:"Couldn't add repo to db"
-            })
+        if(repo_id.length===0){
+            return badRequestResponse(res,"Couldn't add repo to db")
+            
         }
 
         const {entries_arr, zip} = await downloadRepo(owner, repo_name, branch);
         if(!entries_arr || !zip){
-            return res.status(400).json({
-                message:"Failed to download zip file"
-            })
+            return badRequestResponse(res,"Failed to download zip file");
         }
         const key = cacheKey(userId, owner, repo_name, branch);
         setRepoCache(key, zip, entries_arr)
@@ -144,16 +138,18 @@ const fetch_files = async (req, res) => {
             })
         }
 
-        return res.status(200).json({
-            message: "Successfully retrieved the repository's data",
-            data: {
-                repo_id,
+        return successResponse(
+            res, 
+            {
+                repo_id: repo_id.id,
                 files: files_arr
-            }
-        })
+            },
+            "Successfully retrieved the repository's data"
+        )
+
     } catch (err) {
         console.log(err);
-        return res.status(500).json({ message: err.message});
+        return serverErrorResponse(res,err.message)
     }
 }
 

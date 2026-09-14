@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import {useAuth} from '../context/AuthContext'
-import Signup from './Signup';
+import {useAuth} from '../context/AuthContext';
+import { Link } from "react-router";
 
 export default function Login () {
     const {login, loginWithGoogle} = useAuth();
@@ -40,7 +40,7 @@ export default function Login () {
 
         <div>
             <button onClick={()=> loginWithGoogle()}>Sign In With Google</button>
-            
+            <Link to="/signup">Sign up</Link>
         </div>
     </>)
 }

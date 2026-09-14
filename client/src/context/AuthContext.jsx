@@ -55,7 +55,7 @@ export function AuthProvider ({children}) {
 
     return (
         <AuthContext.Provider
-        value={{session, user, loading, signUp, login, loginWithGoogle, logout}}
+            value={{session, user, loading, signUp, login, loginWithGoogle, logout}}
         >
             {children}
         </AuthContext.Provider>

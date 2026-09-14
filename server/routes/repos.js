@@ -6,7 +6,7 @@ const router = express.Router()
 
 router.use(requireAuth);
 
-router.post('/details', fecth_repo);
+router.post('/', fecth_repo);
 router.post('/files', fetch_files);
 router.post('/index', embed_content);
 

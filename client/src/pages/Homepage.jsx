@@ -1,20 +1,27 @@
-import { useState } from "react";
+import {  useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import FileTree from "../components/FileTree";
+import { useRepo } from "../context/RepoContext";
+import { useNavigate } from "react-router";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-export default function Homepage(){
 
+export function Homepage(){
+
+    const {setRepoSession } = useRepo()
     const {logout,session} = useAuth();
+
     const [formData, setFormData] = useState({
       github_url:""
     });
     const [githubData, setGithubData] =useState(null);
     const [filesFetched, setFilesFetched] = useState(null);
-    const [currBranch, setCurrBranch] = useState(null);
+    const [currBranch, setCurrBranch] = useState("")
     const [filesSelected, setFilesSelected] = useState([]);
     const [fileTree, setFileTree] = useState(null);
+
+    const navigate = useNavigate();
 
 
     const handleInputChange = (e)=>{
@@ -31,7 +38,7 @@ export default function Homepage(){
       const body={
         "github_url":formData.github_url,
       }
-      const response = await fetch(`${API_URL}/repo/details`,{
+      const response = await fetch(`${API_URL}/repo`,{
         method:'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -75,26 +82,15 @@ export default function Homepage(){
       setFilesFetched(files.data); 
     }
 
-    // const handleFileSelect = (e)=>{
-    //   console.log(e.target.options);
-    //   const selectedOptions = Array.from(e.target.options)
-    //   .filter(option => option.selected)
-    //   .map(option => option.value);
-      
-    //   console.log("Selected options: ")
-    //   setFilesSelected(selectedOptions);
-    //   console.log(selectedOptions);
-    // }
-
     const handleFilesSubmit= async()=>{
-      console.log("Files fetched: ");
-      console.log(filesFetched);
+      // console.log("Files fetched: ");
+      // console.log(filesFetched);
 
-      console.log("Github Data")
-      console.log(githubData);
+      // console.log("Github Data")
+      // console.log(githubData);
 
-      console.log("Files selected")
-      console.log(filesSelected);
+      // console.log("Files selected")
+      // console.log(filesSelected);
       const body={
         filesSelected,
         "github_url":formData.github_url,
@@ -102,19 +98,40 @@ export default function Homepage(){
         repo_id: filesFetched.repo_id
       }
 
-      const embeddign_res = await fetch(`${API_URL}/repo/index`,{
-        method:'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization:`Bearer ${session.access_token}`
-        },
-        body: JSON.stringify(body)
-      });
+    const embeddign_res = await fetch(`${API_URL}/repo/index`,{
+      method:'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization:`Bearer ${session.access_token}`
+      },
+      body: JSON.stringify(body)
+    
+    });
+
+      if(!embeddign_res.ok) return;
 
       const embedding_json = await embeddign_res.json();
 
       console.log("Embeddign data...")
       console.log(embedding_json);
+
+      setRepoSession({
+        github_url:formData.github_url,
+        repo_id: filesFetched.repo_id,
+        owner: {
+          name: githubData.repo.owner.login ?? githubData.repo.owner.name,
+          avatar_url: githubData.repo.owner.avatar_url,
+        },
+        repo: {
+          name: githubData.repo.name,
+          description: githubData.repo.description,
+        },
+        branches: githubData.branches,
+        curr_branch: currBranch,
+        filesSelected,
+      });
+
+      navigate('/chat');
 
     }
     const toggleFile = (path) => {
@@ -143,9 +160,6 @@ export default function Homepage(){
     
         node.files.push(item);
       }
-
-      console.log("Root")
-      console.log(root);
     
       return root;
     }
@@ -153,8 +167,7 @@ export default function Homepage(){
     
     return(
         <>
-          
-          <button onClick={()=>{logout()}}>
+         <button onClick={()=>{logout()}}>
             Logout
           </button>
 
@@ -169,10 +182,11 @@ export default function Homepage(){
           {githubData ? <div>
             <h2>Branches:</h2>
 
-            
             <select 
               value={currBranch} 
-              onChange={(e)=>{setCurrBranch(e.target.value)}}
+              onChange={(e)=>{
+                setCurrBranch(e.target.value)
+              }}
               style={{ width: '200px', height: '120px', padding: '5px' }}
             >
               {githubData.branches.map((item) => (
@@ -204,6 +218,14 @@ export default function Homepage(){
             :""
           }
 
+        {currBranch?
+          <>
+            {currBranch}
+          </>:
+        ""}
+
         </>
+
+       
     )
 }

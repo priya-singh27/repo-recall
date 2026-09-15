@@ -1,5 +1,3 @@
-const fs = require('fs/promises');
-const { pool } = require('../db/db_config');
 const {addRepo, getRepo} = require('../repository/repos.repository')
 const {addChunks, deleteChunks} =require('../repository/chunks.repository');
 const parseGithubUrl = require('../utils/github_url_parser.utils');
@@ -7,7 +5,7 @@ const downloadRepo = require('../utils/download_repo.utils');
 const { cacheKey, setRepoCache, getRepoCache } = require('../utils/repo_cache');
 const crypto = require('crypto');
 const { getIndexedFile, addIndexedFiles, updateContentHash, getAllIndexedFileForRepo, updateFilesActive, updateActive } = require('../repository/indexed_files.repository');
-const { embed_file } = require('../utils/embed_data');
+const { embed_file } = require('../utils/embed_repo_data');
 const { unauthorizedResponse, badRequestResponse, successResponse, serverErrorResponse, externalServiceResponse, goneResponse } = require('../utils/response');
 
 const embed_content = async (req, res) => {

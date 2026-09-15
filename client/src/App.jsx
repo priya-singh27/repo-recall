@@ -2,7 +2,7 @@ import './App.css'
 import { useAuth } from './context/AuthContext'
 import Login from './pages/Login';
 import Signup from './pages/Signup';
-import {Homepage} from './pages/Homepage';
+import {Homepage} from './pages/homepage/Homepage';
 import Chat from './pages/Chat';
 import {Route, Routes, Navigate} from 'react-router'
 

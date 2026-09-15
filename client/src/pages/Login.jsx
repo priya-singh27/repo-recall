@@ -40,7 +40,9 @@ export default function Login () {
 
         <div>
             <button onClick={()=> loginWithGoogle()}>Sign In With Google</button>
-            <Link to="/signup">Sign up</Link>
+            <button>
+                <Link to="/signup">Sign up</Link>
+            </button>
         </div>
     </>)
 }

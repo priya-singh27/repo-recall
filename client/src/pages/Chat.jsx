@@ -1,10 +1,20 @@
 import { Navigate } from "react-router";
 import { useRepo } from "../context/RepoContext";
+import { useState } from "react";
+import { useEffect } from "react";
 
 export default function Chat(){
     const {repoSession} = useRepo();
 
     if(!repoSession) return <Navigate to="/" replace />
+
+    const [chat, setChat] = useState(null);
+    const [formData, setFormData] = useState(null);
+    
+
+    const handleInputChange = () =>{
+        
+    }
 
     return(
         <>
@@ -21,6 +31,11 @@ export default function Chat(){
                     <p>{item.protected}</p>
                 </>
             )}
+
+            <div>
+                <input onChange={handleInputChange} type="text" value={formData} placeholder="Type..." name="user_input"></input>
+                <input type="submit"></input>
+            </div>
         </>
     )
 }

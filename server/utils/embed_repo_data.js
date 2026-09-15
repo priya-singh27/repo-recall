@@ -10,18 +10,8 @@ const embed_file = async(indexed_file_id, content)=>{
             const chunkData = lines.slice(start,end).join('\n');
             if(!chunkData.trim()) continue;
 
-            const ollamaRes = await fetch('http://localhost:11434/api/embeddings', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    model: 'nomic-embed-text',
-                    prompt: chunkData,
-                }),
-            });
-            if(!ollamaRes.ok){
-                throw new Error(`Ollama embeddings failed (${ollamaRes.status})`);
-            }
-            const {embedding} = await ollamaRes.json();// number[] length 768
+            // number[] length 768
+            const embedding = await embed(chunkData);
 
             if ( embedding.length === 0) {
                 throw new Error("Empty embedding from Ollama");
@@ -39,6 +29,30 @@ const embed_file = async(indexed_file_id, content)=>{
     }
 }
 
+const embed = async (data)=>{
+    try{
+        const ollamaRes = await fetch('http://localhost:11434/api/embeddings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                model: 'nomic-embed-text',
+                prompt: data,
+            }),
+        });
+        if(!ollamaRes.ok){
+            throw new Error(`Ollama embeddings failed (${ollamaRes.status})`);
+        }
+         
+        const {embedding} = await ollamaRes.json();
+
+        return embedding
+    }catch(err){
+        console.log(err);
+        throw new Error(`${err.message}`)
+    }
+}
+
 module.exports={
-    embed_file
+    embed_file,
+    embed
 }

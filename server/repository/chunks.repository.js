@@ -43,14 +43,13 @@ const deleteChunks = async(indexed_file_id)=>{
 const getChunks  = async(user_input_embedding, repo_id) => {
     try{
         const {rows} = await pool.query(`
-            SELECT c.chunks, c.start_line, c.end_line, c.content, f.path, 
-            c.embedding <=> $1::vector AS distance 
+            SELECT c.content, c.start_line, c.end_line, f.path, c.embedding <=> $1::vector AS distance
             FROM chunks c
             JOIN indexed_files f ON f.id = c.indexed_file_id
             WHERE f.repo_id= $2 AND f.active= true
             ORDER BY c.embedding <=> $1::vector
             LIMIT $3
-        `,[user_input_embedding, repo_id, 5]);
+        `,[user_input_embedding, repo_id, 10]);
 
         if(rows.length>0) return rows;
         return null;

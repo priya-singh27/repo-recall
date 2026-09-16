@@ -117,7 +117,6 @@ export function Homepage(){
 
       setRepoSession({
         github_url:formData.github_url,
-        repo_id: filesFetched.repo_id,
         owner: {
           name: githubData.repo.owner.login ?? githubData.repo.owner.name,
           avatar_url: githubData.repo.owner.avatar_url,
@@ -125,6 +124,7 @@ export function Homepage(){
         repo: {
           name: githubData.repo.name,
           description: githubData.repo.description,
+          repo_id: filesFetched.repo_id,
         },
         branches: githubData.branches,
         curr_branch: currBranch,

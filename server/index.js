@@ -11,8 +11,10 @@ app.use(cors())
 
 
 const repo_router = require('./routes/repos');
+const chat_router = require('./routes/chat')
 
 app.use('/repo', repo_router);
+app.use('/chat', chat_router)
 
 
 process.on('SIGINT', async ()=>{

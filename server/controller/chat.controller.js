@@ -1,6 +1,7 @@
 const { getChunks } = require("../repository/chunks.repository");
 const { embed } = require("../utils/embed_repo_data");
 const { serverErrorResponse, successResponse } = require("../utils/response");
+const get_prompt = require('../utils/prompt')
 
 const sendChatBot =  async (req,res) =>{
     try{
@@ -10,8 +11,11 @@ const sendChatBot =  async (req,res) =>{
         const embedding_string = JSON.stringify(embedding)
         const chunks_data = await getChunks(embedding_string, repo_id);
 
-        console.log(chunks_data);
-        return successResponse(res, chunks_data, "Successfully completed.")
+        const prompt  = get_prompt(chunks_data, user_input);
+
+        
+
+        return successResponse(res, prompt, "Successfully completed.")
 
     }catch(err){
         console.log(err)

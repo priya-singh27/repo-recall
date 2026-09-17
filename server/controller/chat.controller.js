@@ -1,7 +1,11 @@
 const { getChunks } = require("../repository/chunks.repository");
 const { embed } = require("../utils/embed_repo_data");
 const { serverErrorResponse, successResponse } = require("../utils/response");
-const get_prompt = require('../utils/prompt')
+const get_prompt = require('../utils/prompt');
+const {GoogleGenAI} = require('@google/genai')
+require('dotenv').config()
+
+const ai = new GoogleGenAI({apiKey:process.env.GEMINI_API_KEY});
 
 const sendChatBot =  async (req,res) =>{
     try{
@@ -13,9 +17,19 @@ const sendChatBot =  async (req,res) =>{
 
         const prompt  = get_prompt(chunks_data, user_input);
 
-        
+        const response = await ai.models.generateContent({
+            model:process.env.GEMINI_CHAT_MODEL,
+            contents:prompt
+        })
 
-        return successResponse(res, prompt, "Successfully completed.")
+        console.log("gemini chat model response:");
+        console.log(response)
+
+        const answer = response.text;
+
+        console.log(answer)
+
+        return successResponse(res, answer, "Successfully completed.")
 
     }catch(err){
         console.log(err)

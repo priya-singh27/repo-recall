@@ -19,7 +19,8 @@ const sendChatBot =  async (req,res) =>{
 
         const response = await ai.models.generateContent({
             model:process.env.GEMINI_CHAT_MODEL,
-            contents:prompt
+            contents:prompt,
+            stream:true
         })
 
         console.log("gemini chat model response:");

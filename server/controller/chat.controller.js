@@ -17,20 +17,28 @@ const sendChatBot =  async (req,res) =>{
 
         const prompt  = get_prompt(chunks_data, user_input);
 
-        const response = await ai.models.generateContent({
+        const stream = await ai.models.generateContentStream({
             model:process.env.GEMINI_CHAT_MODEL,
             contents:prompt,
-            stream:true
         })
 
-        console.log("gemini chat model response:");
-        console.log(response)
+        for await (const chunk of stream) {
+            const piece = chunk.text;
+            if (piece) {
+            }
+        }
 
-        const answer = response.text;
+        // const parsed = JSON.parse(stream.text);//from json string -> js object
 
-        console.log(answer)
+        const full=""
+        const iterator = stream[Symbol.asyncIterator]();
+        while(true){
+            const {value:chunk, done} = await iterator.next();
+            if(done) break;
+            if (chunk?.text) full += chunk.text;
+        }
 
-        return successResponse(res, answer, "Successfully completed.")
+        return successResponse(res, "", "Successfully completed.")
 
     }catch(err){
         console.log(err)

@@ -86,7 +86,7 @@ const fecth_repo = async (req, res) => {
         if (!repo_data.ok || !branches_data.ok) 
             return externalServiceResponse(res,"Failed to retrieve data from the external service. Please try again later.")
 
-        const repo_json = await repo_data.json();
+        const repo_json = await repo_data.json();//internally calls JSON.strigify() converts js obj -> json
 
         const branches_json = await branches_data.json();
 

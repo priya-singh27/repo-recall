@@ -2,16 +2,19 @@ import { Navigate } from "react-router";
 import { useRepo } from "../context/RepoContext";
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import ReactMarkdown from "react-markdown";
+
 const API_URL = import.meta.env.VITE_API_URL;
 
 export default function Chat(){
     const {repoSession} = useRepo();
     const {logout, session} = useAuth();
 
-    if(!repoSession) return <Navigate to="/" replace />
-
-    const [chat, setChat] = useState(null);
+    const [chatResponse, setchatResponse] = useState(null);
     const [formData, setFormData] = useState(null);
+
+
+    if(!repoSession) return <Navigate to="/" replace />
     
     const handleInputChange = async (e) => {
         setFormData(e.target.value);
@@ -35,10 +38,10 @@ export default function Chat(){
 
         });
 
-        const data = await res.json();
+        const json_res = await res.json();
 
-        console.log(data);
-        setChat(data);
+        console.log(json_res.data);
+        setchatResponse(json_res.data);
     }
 
     return(
@@ -69,7 +72,20 @@ export default function Chat(){
             </div>
 
             {
-                chat && <p>{chat}</p>
+                chatResponse && <>
+                    <div className="answer">
+                        <ReactMarkdown>{chatResponse.answer}</ReactMarkdown>
+                    </div>
+                    <ul>
+                        {
+                            chatResponse.sources?.map(s => (
+                                <li key={`${s.path}-${s.start_line}`}>
+                                    {s.path} ({s.start_line}-{s.end_line})
+                                </li>
+                            ))
+                        }
+                    </ul>
+                </>
             }
         </>
     )

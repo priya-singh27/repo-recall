@@ -40,7 +40,7 @@ const deleteChunks = async(indexed_file_id)=>{
     }
 }
 
-const getChunks  = async(user_input_embedding, repo_id) => {
+const getFromChunks  = async(user_input_embedding, repo_id) => {
     try{
         const {rows} = await pool.query(`
             SELECT c.content, c.start_line, c.end_line, f.path, c.embedding <=> $1::vector AS distance
@@ -61,5 +61,5 @@ const getChunks  = async(user_input_embedding, repo_id) => {
 module.exports={
     addChunks,
     deleteChunks,
-    getChunks
+    getFromChunks
 }

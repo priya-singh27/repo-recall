@@ -7,8 +7,9 @@ const get_prompt = (content, user_input) => {
             chunks.length=  10;
         }
         const sources=[]
-        const context = chunks.map((chunk)=>{
+        const context = chunks.map((chunk, idx)=>{
             const obj = {
+                id: idx+1,
                 path:chunk.path,
                 start_line:chunk.start_line,
                 end_line:chunk.end_line
@@ -16,9 +17,12 @@ const get_prompt = (content, user_input) => {
             sources.push(obj);
 
             return `
-               File: ${chunk.path} (lines ${chunk.start_line}-${chunk.end_line})\n${chunk.content}
+               [${idx+1}] ${chunk.path} (lines ${chunk.start_line}-${chunk.end_line})\n${chunk.content}
             `
         }).join("\n\n--\n\n");
+
+        console.log("Context: ");
+        console.log(context)
 
         const prompt = 
         `
@@ -30,6 +34,9 @@ const get_prompt = (content, user_input) => {
 
             QUESTION:
             ${user_input}
+
+            Cite the blocks you use with their bracketed ID, e.g. [2].
+            Use only IDs that appear in CONTEXT. Never invent IDs, file paths, or line numbers.
             `;
         console.log(prompt)
 

@@ -38,10 +38,41 @@ export default function Chat(){
 
         });
 
-        const json_res = await res.json();
+        const reader = res.body.getReader();// readable stream
+        const decoder = new TextDecoder("utf-8");
 
-        console.log(json_res.data);
-        setchatResponse(json_res.data);
+        let buffer = "";
+        let answer = "";
+        let sources = [];
+
+        while(true) {
+            
+            const { value, done } = await reader.read();
+            if(done)break;
+
+            buffer += decoder.decode(value, { stream: true });//it means there might be partial utf-8 character at the end of this so remember this
+
+            const parts = buffer.split("\n\n");
+            
+            buffer = parts.pop(); // leftover incomplete event
+
+            for (const part of parts) {
+                const split_event_data = part.split("\n");
+                if (split_event_data.length < 2) continue;
+ 
+                const event = split_event_data[0].slice(6).trim();
+                const payload = JSON.parse(split_event_data[1].slice(5).trim());
+
+                if (event === "sources") sources = payload;
+                if (event === "text") {
+                    answer += payload;                                                                                      
+                    setchatResponse({ answer, sources }); // live update
+                }
+                if (event === "done") {
+                    setchatResponse({ answer, sources });
+                }
+            }
+        }
     }
 
     return(

@@ -3,6 +3,7 @@ import { useAuth } from "../../context/AuthContext";
 import FileTree from "../../components/FileTree";
 import { useRepo } from "../../context/RepoContext";
 import { useNavigate } from "react-router";
+import './homepage.css'
 
 const API_URL = import.meta.env.VITE_API_URL;
 

@@ -15,22 +15,37 @@ const sendChatBot =  async (req,res) =>{
         const embedding_string = JSON.stringify(embedding)
         const content = await getFromChunks(embedding_string, repo_id);
 
-        const {prompt, sources}  = get_prompt(content, user_input);
+        res.setHeader("Content-Type", "text/event-stream");
+        res.setHeader("Cache-Control", "no-cache");
+        res.flushHeaders();
 
-        const response = await ai.models.generateContent({
+        const {prompt, sources}  = get_prompt(content, user_input);
+        res.write(`event: sources\ndata: ${JSON.stringify(sources)}\n\n`);
+
+        const stream = await ai.models.generateContentStream({
             model:process.env.GEMINI_CHAT_MODEL,
             contents:prompt,
         });//it will be js object 
 
-        const answer = response.text;
+        for await (const chunk of stream){
+            const data = chunk.text;
+            if(data) res.write(`event: text\ndata: ${JSON.stringify(chunk.text)}\n\n`);
+        }
 
-        return successResponse(res, {
-            answer,
-            sources
-        }, "Response received successfully")
+        res.write("event: done\ndata: {}\n\n");
+
+        res.end();
+
+        // const answer = response.text;
+
+        // return successResponse(res, {
+        //     answer,
+        //     sources
+        // }, "Response received successfully")
 
     }catch(err){
-        console.log(err)
+        console.log(err);
+        if (res.headersSent) return res.end();
         return serverErrorResponse(res, err.message)
     }
 }

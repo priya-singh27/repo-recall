@@ -5,7 +5,7 @@ const downloadRepo = require('../utils/download_repo.utils');
 const { cacheKey, setRepoCache, getRepoCache } = require('../utils/repo_cache');
 const crypto = require('crypto');
 const { getIndexedFile, addIndexedFiles, updateContentHash, getAllIndexedFileForRepo, updateFilesActive, updateActive } = require('../repository/indexed_files.repository');
-const { embed_file } = require('../utils/embed_repo_data');
+const { insertPreparedChunks, chunkAndEmbed } = require('../utils/embed_repo_data');
 const { unauthorizedResponse, badRequestResponse, successResponse, serverErrorResponse, externalServiceResponse, goneResponse } = require('../utils/response');
 const { pool } = require('../db/db_config');
 
@@ -41,8 +41,6 @@ const embed_content = async (req, res) => {
 
             const indexed_file = await getIndexedFile(repo_id,file);
             
-              
-
             const content = entry.getContent();
             const curr_content_hash= crypto.createHash('sha256').update(content,'utf-8').digest('hex')
 
@@ -52,28 +50,28 @@ const embed_content = async (req, res) => {
                 continue;
             }
 
+            const prepared = await chunkAndEmbed(content);
+
             //BEGIN A TRANSACTION 
             const client = await pool.connect();
             try{
                 await client.query('BEGIN');
+
+                let fileId;
                  //embed current file path's content if didnt exist
                 if(!indexed_file){
                     
-                    const indexed_file_row = await addIndexedFiles(client, repo_id, file, true, curr_content_hash);
-                    if(!indexed_file_row) throw new Error("Incorrect file selected")
-                
-                    await embed_file(client, indexed_file_row.id, content);//this throws error and goes to catch block
+                    const row = await addIndexedFiles(client, repo_id, file, true, curr_content_hash);
+                    if (!row) throw new Error("Incorrect file selected");
+                    fileId = row.id;
                     
                 }else{
-            
-                    const stored_content_hash = indexed_file.content_hash;
-                    if(stored_content_hash!==curr_content_hash){
-                    
-                        const existing_chunks = await deleteChunks(client, indexed_file.id);
-                        await embed_file(client, indexed_file.id, content);
-                        await updateContentHash(client, repo_id,file,curr_content_hash);
-                    }
+                    await deleteChunks(client, indexed_file.id);
+                    await updateContentHash(client, repo_id, file, curr_content_hash);
+                    fileId = indexed_file.id;
                 }
+
+                await insertPreparedChunks(client, fileId, prepared);
                 await updateActive(client,repo_id, file, true);
 
                 await client.query('COMMIT');

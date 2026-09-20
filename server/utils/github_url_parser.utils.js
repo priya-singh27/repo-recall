@@ -22,7 +22,8 @@ const parseGithubUrl = (repo_url) => {
 
         return {owner, repo_name};
     }catch(err){
-        throw err;
+        console.log(err)
+        return null
     }
 }
 

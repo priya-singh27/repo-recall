@@ -1,14 +1,17 @@
 const {pool} = require('../db/db_config');
 
-const addChunks = async (indexed_file_id, content, start_line, end_line,embedding)=>{
+const addChunks = async (client, indexed_file_id, content, start_line, end_line,embedding)=>{
     try{
-        
-        const {rows} = await pool.query(`
+        const db = client || pool;
+       
+        const {rows} = await db.query(`
             INSERT INTO chunks
             (indexed_file_id,content, start_line, end_line,embedding)
             VALUES ($1, $2, $3, $4, $5)
             RETURNING id
         `, [indexed_file_id, content, start_line, end_line, embedding]);
+        
+        
 
         console.log("Rows from addChunks");
         console.log(rows)
@@ -17,13 +20,16 @@ const addChunks = async (indexed_file_id, content, start_line, end_line,embeddin
         
         return null;
     }catch(err){
-        console.log(err)
+        console.log(err);
+        throw new Error(err.message)
     }
 }
 
-const deleteChunks = async(indexed_file_id)=>{
+const deleteChunks = async(client, indexed_file_id)=>{
     try{
-        const {rows} = await pool.query(
+        const db = client || pool;
+
+        const {rows} = await db.query(
             `
             DELETE FROM chunks
             WHERE indexed_file_id=$1
@@ -36,7 +42,8 @@ const deleteChunks = async(indexed_file_id)=>{
         }
         return null;
     }catch(err){
-        console.log(err)
+        console.log(err);
+        throw new Error(err.message)
     }
 }
 
@@ -55,6 +62,7 @@ const getFromChunks  = async(user_input_embedding, repo_id) => {
         return null;
     }catch(err){
         console.log(err);
+        throw new Error(err.message)
     }
 }
 

@@ -7,16 +7,17 @@ const crypto = require('crypto');
 const { getIndexedFile, addIndexedFiles, updateContentHash, getAllIndexedFileForRepo, updateFilesActive, updateActive } = require('../repository/indexed_files.repository');
 const { embed_file } = require('../utils/embed_repo_data');
 const { unauthorizedResponse, badRequestResponse, successResponse, serverErrorResponse, externalServiceResponse, goneResponse } = require('../utils/response');
+const { pool } = require('../db/db_config');
 
 const embed_content = async (req, res) => {
     try {
         const userId = req.user.id;
         const { filesSelected, github_url, branch, repo_id } = req.body;
+        if(!github_url || !branch || !filesSelected || !repo_id) return badRequestResponse(res, "Bad Request")
 
-        console.log(`Printing req.body of embed_content`);
-        console.log(repo_id)
-
-        const {repo_name ,owner} = parseGithubUrl(github_url);
+        const  parsed = parseGithubUrl(github_url);
+        if(!parsed) return badRequestResponse(res, "Not a valid github url")
+        const {repo_name ,owner} =parsed;
 
         const key = cacheKey(userId, owner, repo_name, branch);
         const cached = getRepoCache(key);
@@ -38,29 +39,51 @@ const embed_content = async (req, res) => {
             const entry = entries_arr.find(curr=> curr.path_===file);
             if (!entry || entry.isDir) continue;
 
+            const indexed_file = await getIndexedFile(repo_id,file);
+            
+              
+
             const content = entry.getContent();
             const curr_content_hash= crypto.createHash('sha256').update(content,'utf-8').digest('hex')
 
-            const indexed_file = await getIndexedFile(repo_id,file);
-
-             //embed current file path's content if either content of the file changed or didnt exist
-            if(!indexed_file){
-
-                const indexed_file_row = await addIndexedFiles(repo_id, file, true, curr_content_hash);
-                if(!indexed_file_row) return badRequestResponse(res, `Couldn't add ${file} to the indexed files table`);
-            
-                await embed_file(indexed_file_row.id, content);//this throws error and goes to catch block
-                
-            }else{
-                const stored_content_hash = indexed_file.content_hash;
-                if(stored_content_hash!==curr_content_hash){
-                   
-                    const existing_chunks = await deleteChunks(indexed_file.id);
-                    await embed_file(indexed_file.id, content);
-                    await updateContentHash(repo_id,file,curr_content_hash);
-                }
+            //if the content hash is same
+            if (indexed_file && indexed_file.content_hash === curr_content_hash) {
+                await updateActive(repo_id, file, true);
+                continue;
             }
-            await updateActive(repo_id, file, true);
+
+            //BEGIN A TRANSACTION 
+            const client = await pool.connect();
+            try{
+                await client.query('BEGIN');
+                 //embed current file path's content if didnt exist
+                if(!indexed_file){
+                    
+                    const indexed_file_row = await addIndexedFiles(client, repo_id, file, true, curr_content_hash);
+                    if(!indexed_file_row) throw new Error("Incorrect file selected")
+                
+                    await embed_file(client, indexed_file_row.id, content);//this throws error and goes to catch block
+                    
+                }else{
+            
+                    const stored_content_hash = indexed_file.content_hash;
+                    if(stored_content_hash!==curr_content_hash){
+                    
+                        const existing_chunks = await deleteChunks(client, indexed_file.id);
+                        await embed_file(client, indexed_file.id, content);
+                        await updateContentHash(client, repo_id,file,curr_content_hash);
+                    }
+                }
+                await updateActive(client,repo_id, file, true);
+
+                await client.query('COMMIT');
+            }catch(err){
+                await client.query('ROLLBACK');
+                throw err
+
+            }finally{
+                client.release();
+            }
 
         }
 
@@ -76,12 +99,21 @@ const embed_content = async (req, res) => {
 const fecth_repo = async (req, res) => {
     try {
         const github_url = req.body.github_url;
+        if(!github_url ) return badRequestResponse(res, "No github url provided")
         const userId = req.user.id;
 
-        const {repo_name ,owner} = parseGithubUrl(github_url);
+        const  parsed = parseGithubUrl(github_url);
+        if(!parsed) return badRequestResponse(res, "Not a valid github url")
+        const {repo_name ,owner} =parsed;
 
-        const repo_data = await fetch(` https://api.github.com/repos/${owner}/${repo_name}`);
-        const branches_data = await fetch(`https://api.github.com/repos/${owner}/${repo_name}/branches`);
+        const repo_data = await fetch(`https://api.github.com/repos/${owner}/${repo_name}`,{
+            signal: AbortSignal.timeout(10_000)//If 10 seconds pass and no response has arrived, the AbortSignal fires. JavaScript throws a specific runtime error called an AbortError
+        });
+        const branches_data = await fetch(`https://api.github.com/repos/${owner}/${repo_name}/branches`,{
+            
+                signal: AbortSignal.timeout(10_000), 
+            }
+        );
 
         if (!repo_data.ok || !branches_data.ok) 
             return externalServiceResponse(res,"Failed to retrieve data from the external service. Please try again later.")
@@ -108,12 +140,16 @@ const fecth_repo = async (req, res) => {
 const fetch_files = async (req, res) => {
     try {
         const {github_url,branch} = req.body;
+
+        if(!github_url || !branch) return badRequestResponse(res, "No github url provided or no branch selected")
         const userId = req.user.id;
 
-        const {repo_name ,owner} = parseGithubUrl(github_url);
+        const  parsed = parseGithubUrl(github_url);
+        if(!parsed) return badRequestResponse(res, "Not a valid github url")
+        const {repo_name ,owner} =parsed;
 
         const repo_id = await addRepo(userId, owner, repo_name, github_url, 'pending', branch);
-        if(repo_id.length===0){
+        if(!repo_id){
             return badRequestResponse(res,"Couldn't add repo to db")
             
         }
@@ -122,6 +158,7 @@ const fetch_files = async (req, res) => {
         if(!entries_arr || !zip){
             return badRequestResponse(res,"Failed to download zip file");
         }
+
         const key = cacheKey(userId, owner, repo_name, branch);
         setRepoCache(key, zip, entries_arr)
 

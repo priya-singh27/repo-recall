@@ -1,8 +1,8 @@
 const { addChunks } = require("../repository/chunks.repository");
 
-const embed_file = async(indexed_file_id, content)=>{
+const embed_file = async(client, indexed_file_id, content)=>{
     try{
-
+        
         const lines = content.split('\n');
         const CHUNK_LINES = 40;
         for(let start=0; start<lines.length; start+=CHUNK_LINES){
@@ -17,7 +17,7 @@ const embed_file = async(indexed_file_id, content)=>{
                 throw new Error("Empty embedding from Ollama");
             }
 
-            const chunks_row =await addChunks(indexed_file_id, chunkData, start+1, end, JSON.stringify(embedding));
+            const chunks_row =await addChunks(client, indexed_file_id, chunkData, start+1, end, JSON.stringify(embedding));
             if (!chunks_row) throw new Error("Couldn't add chunk");
         }
 

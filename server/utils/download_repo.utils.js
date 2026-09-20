@@ -41,12 +41,5 @@ const downloadRepo = async (owner, repo_name, branch) => {
     }
 }
 
-const getEntriesData=(entries)=>{
-   for(const entry of entries){
-      const text_content = entry.getContent();
-
-   }
-}
-
 module.exports= downloadRepo;
 

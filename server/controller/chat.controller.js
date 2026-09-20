@@ -1,6 +1,6 @@
 const { getFromChunks } = require("../repository/chunks.repository");
 const { embed } = require("../utils/embed_repo_data");
-const { serverErrorResponse, successResponse } = require("../utils/response");
+const { serverErrorResponse, successResponse, badRequestResponse } = require("../utils/response");
 const get_prompt = require('../utils/prompt');
 const {GoogleGenAI} = require('@google/genai')
 require('dotenv').config()
@@ -19,7 +19,10 @@ const sendChatBot =  async (req,res) =>{
         res.setHeader("Cache-Control", "no-cache");
         res.flushHeaders();
 
-        const {prompt, sources}  = get_prompt(content, user_input);
+        const prompt_res  = get_prompt(content, user_input);
+        if(!prompt_res) return serverErrorResponse(res, "There was some error in prompt")
+        const {prompt, sources} = prompt_res;
+
         res.write(`event: sources\ndata: ${JSON.stringify(sources)}\n\n`);
 
         const stream = await ai.models.generateContentStream({
@@ -35,13 +38,6 @@ const sendChatBot =  async (req,res) =>{
         res.write("event: done\ndata: {}\n\n");
 
         res.end();
-
-        // const answer = response.text;
-
-        // return successResponse(res, {
-        //     answer,
-        //     sources
-        // }, "Response received successfully")
 
     }catch(err){
         console.log(err);

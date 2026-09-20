@@ -19,6 +19,7 @@ const addRepo = async(user_id, owner, repo_name, github_url, status, branch)=>{
         return null;
     }catch(err){
         console.log(err)
+        throw new Error(err.message)
     }
 }
 
@@ -36,6 +37,7 @@ const getRepo = async(user_id, owner, project_name, branch)=>{
         return null;
     }catch(err){
         console.log(err)
+        throw new Error(err.message)
     }
 }
 

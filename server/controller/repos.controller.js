@@ -46,7 +46,7 @@ const embed_content = async (req, res) => {
 
             //if the content hash is same
             if (indexed_file && indexed_file.content_hash === curr_content_hash) {
-                await updateActive(repo_id, file, true);
+                await updateActive(client, repo_id, file, true);
                 continue;
             }
 

@@ -67,5 +67,6 @@ const embed = async (data) => {
 
 module.exports={
     insertPreparedChunks,
-    chunkAndEmbed
+    chunkAndEmbed,
+    embed
 }

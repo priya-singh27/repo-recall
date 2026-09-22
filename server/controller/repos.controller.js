@@ -8,6 +8,7 @@ const { getIndexedFile, addIndexedFiles, updateContentHash, getAllIndexedFileFor
 const { insertPreparedChunks, chunkAndEmbed } = require('../utils/embed_repo_data');
 const { unauthorizedResponse, badRequestResponse, successResponse, serverErrorResponse, externalServiceResponse, goneResponse } = require('../utils/response');
 const { pool } = require('../db/db_config');
+const { isTextFile } = require('../utils/text_file.utils');
 
 const embed_content = async (req, res) => {
     try {
@@ -37,7 +38,7 @@ const embed_content = async (req, res) => {
 
         for(const file of filesSelected){
             const entry = entries_arr.find(curr=> curr.path_===file);
-            if (!entry || entry.isDir) continue;
+            if (!entry || entry.isDir || !isTextFile(file)) continue;
 
             const indexed_file = await getIndexedFile(repo_id,file);
             
@@ -162,6 +163,7 @@ const fetch_files = async (req, res) => {
 
         const files_arr =[];
         for(const entry of entries_arr){
+            if (entry.isDir || !isTextFile(entry.path_)) continue;
             files_arr.push({
                 path:entry.path_,
                 name: entry.name,

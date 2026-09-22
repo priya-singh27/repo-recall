@@ -1,3 +1,5 @@
+import './FileTree.css'
+
 export default function FileTree({ node, depth = 0, selected, onToggle }) {
     const folders = Object.values(node.children).sort((a, b) =>
       a.name.localeCompare(b.name)
@@ -7,11 +9,11 @@ export default function FileTree({ node, depth = 0, selected, onToggle }) {
     );
   
     return (
-      <div>
+      <div className="file-tree">
         {folders.map((folder) => (
           <div key={folder.name}>
-            <div style={{ paddingLeft: depth * 16, fontWeight: 600 }}>
-              📁 {folder.name}
+            <div className="file-tree__folder" style={{ paddingLeft: depth * 16 }}>
+              {folder.name}
             </div>
             <FileTree
               node={folder}
@@ -24,7 +26,8 @@ export default function FileTree({ node, depth = 0, selected, onToggle }) {
         {files.map((file) => (
           <label
             key={file.path}
-            style={{ display: "block", paddingLeft: depth * 16 }}
+            className="file-tree__file"
+            style={{ paddingLeft: depth * 16 }}
           >
             <input
               type="checkbox"

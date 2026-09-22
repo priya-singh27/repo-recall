@@ -1,14 +1,15 @@
 import { Navigate } from "react-router";
-import { useRepo } from "../context/RepoContext";
+import { useRepo } from "../../context/RepoContext";
 import { useState } from "react";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 import ReactMarkdown from "react-markdown";
+import "./Chat.css";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
 export default function Chat(){
     const {repoSession} = useRepo();
-    const {logout, session} = useAuth();
+    const { session } = useAuth();
 
     const [chatResponse, setchatResponse] = useState(null);
     const [formData, setFormData] = useState(null);
@@ -76,38 +77,33 @@ export default function Chat(){
     }
 
     return(
-        <>
-            <button onClick={()=>{logout()}}>
-                Logout
-          </button>
-            
-            <p>{repoSession.owner.name}</p>
-            <img src={repoSession.owner.avatar_url}/>
-            <h1>{repoSession.repo.name}</h1>
-            <h2>Branches: </h2>
-            <ul>
-            {repoSession.branches.map(item => 
-                <li>
-                    <h3>Branch Name: {item.name}</h3>
-                    <p>sha: {item.commit.url}</p>
-                    <p>Branch url: {item.commit.url}</p>
-                    <p>{item.protected}</p>
-                </li>
-            )}
-            </ul>
-            
+        <div className="chat">
+            <header className="chat__repo">
+                <img className="chat__avatar" src={repoSession.owner.avatar_url} alt="" />
+                <div>
+                    <p className="chat__owner">{repoSession.owner.name}</p>
+                    <h1>{repoSession.repo.name}</h1>
+                </div>
 
-            <div>
-                <input onChange={handleInputChange} type="text" value={formData} placeholder="Type..." name="user_input"></input>
-                <button type="submit" onClick={handleInputSubmit}>Submit</button>
-            </div>
+                <span className="chat__branch">{repoSession.repo.curr_branch}</span>
+            </header>
+
+            <section className="chat__section">
+                
+                
+            </section>
+
+            <form className="chat__composer" onSubmit={handleInputSubmit}>
+                <input onChange={handleInputChange} type="text" value={formData ?? ""} placeholder="Ask about this repo" name="user_input"></input>
+                <button type="submit">Submit</button>
+            </form>
 
             {
                 chatResponse && <>
-                    <div className="answer">
+                    <div className="chat__answer">
                         <ReactMarkdown>{chatResponse.answer}</ReactMarkdown>
                     </div>
-                    <ul>
+                    <ul className="chat__sources">
                         {
                             chatResponse.sources?.map(s => (
                                 <li key={`${s.path}-${s.start_line}`}>
@@ -118,6 +114,6 @@ export default function Chat(){
                     </ul>
                 </>
             }
-        </>
+        </div>
     )
 }

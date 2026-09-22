@@ -1,0 +1,15 @@
+.file-tree__folder,
+.file-tree__file {
+  padding-top: var(--space-1);
+  padding-bottom: var(--space-1);
+}
+
+.file-tree__folder {
+  font-weight: 600;
+}
+
+.file-tree__file {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}

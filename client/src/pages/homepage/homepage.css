@@ -1,0 +1,37 @@
+.homepage__section {
+  margin-bottom: var(--space-5);
+}
+
+.homepage h2 {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-lg);
+}
+
+.homepage__form,
+.homepage__branch {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.homepage__form input,
+.homepage__branch select {
+  flex: 1;
+  min-width: 0;
+}
+
+.homepage__files {
+  max-height: 360px;
+  overflow: auto;
+  margin-bottom: var(--space-3);
+  padding: var(--space-2);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.homepage__current {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}

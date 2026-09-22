@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import {useAuth} from '../context/AuthContext';
 import { Link } from "react-router";
+import './auth.css';
 
 export default function Login () {
     const {login, loginWithGoogle} = useAuth();
@@ -26,23 +27,22 @@ export default function Login () {
         }
         
     }
-    return(<>
-    <h1>Login Page</h1>
-        <form onSubmit={handleSubmit}>
-           <label htmlFor='email'>Enter email:</label>
+    return(
+    <div className="auth">
+        <h1>Login</h1>
+        <form className="auth__form" onSubmit={handleSubmit}>
+           <label htmlFor='email'>Email</label>
            <input type="email" id='email' name='email' onChange={handleChange} value={formData.email}></input>
 
-           <label htmlFor='password'>Enter Password:</label>
+           <label htmlFor='password'>Password</label>
            <input type="password" id='password' name='password' onChange={handleChange} value={formData.password}></input>
 
-           <button>Sign In</button>
+           <button type="submit">Sign In</button>
         </form>
 
-        <div>
-            <button onClick={()=> loginWithGoogle()}>Sign In With Google</button>
-            <button>
-                <Link to="/signup">Sign up</Link>
-            </button>
+        <div className="auth__alt">
+            <button className="auth__secondary" type="button" onClick={()=> loginWithGoogle()}>Sign In With Google</button>
+            <Link className="auth__link" to="/signup">Sign up</Link>
         </div>
-    </>)
+    </div>)
 }

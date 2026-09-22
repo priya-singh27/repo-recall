@@ -19,4 +19,5 @@ const isTextFile = (path) => {
     return !BINARY_EXTENSIONS.has(ext);
 };
 
+
 module.exports = { isTextFile };

@@ -58,8 +58,7 @@ const getFromChunks  = async(user_input_embedding, repo_id) => {
             LIMIT $3
         `,[user_input_embedding, repo_id, 10]);
 
-        if(rows.length>0) return rows;
-        return null;
+        return rows;
     }catch(err){
         console.log(err);
         throw new Error(err.message)

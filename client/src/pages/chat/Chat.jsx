@@ -15,6 +15,7 @@ export default function Chat(){
     const [sending, setSending] = useState(false);
     const threadRef = useRef(null);
     const inputRef = useRef(null);
+    const abortRef = useRef(null);
 
     useEffect(() => {
         const thread = threadRef.current;
@@ -50,6 +51,10 @@ export default function Chat(){
         }
     }
 
+    const cancelRequest = () => {
+        abortRef.current?.abort();
+    }
+
     const handleInputSubmit = async (e) =>{
         e.preventDefault();
         const user_input = formData.trim();
@@ -63,6 +68,11 @@ export default function Chat(){
             { id: crypto.randomUUID(), role: "assistant", content: "", sources: [] },
         ]);
 
+        const controller = new AbortController();
+        abortRef.current = controller;
+        let answer = "";
+        let sources = [];
+
         try {
             const body = {
                 user_input,
@@ -75,8 +85,8 @@ export default function Chat(){
                     'Content-Type':'application/json',
                     Authorization:`Bearer ${session.access_token}`
                 },
-                body: JSON.stringify(body)
-
+                body: JSON.stringify(body),
+                signal: controller.signal,
             });
 
             if (!res.ok || !res.body) {
@@ -88,8 +98,6 @@ export default function Chat(){
             const decoder = new TextDecoder("utf-8");
 
             let buffer = "";
-            let answer = "";
-            let sources = [];
 
             while(true) {
                 
@@ -120,8 +128,13 @@ export default function Chat(){
                 }
             }
         } catch (err) {
-            updateAssistant(err.message || "Could not get a reply. Try again.", []);
+            if (err.name === "AbortError") {
+                updateAssistant(answer || "Stopped.", sources);
+            } else {
+                updateAssistant(err.message || "Could not get a reply. Try again.", []);
+            }
         } finally {
+            if (abortRef.current === controller) abortRef.current = null;
             setSending(false);
         }
     }
@@ -208,11 +221,21 @@ export default function Chat(){
                         placeholder={repoSession ? "Ask about this repo" : "Index files to chat"}
                         name="user_input"
                         autoComplete="off"
-                        disabled={sending || !repoSession}
+                        disabled={!repoSession}
                     />
-                    <button type="submit" disabled={sending || !repoSession || !formData.trim()}>
-                        Send
-                    </button>
+                    {sending ? (
+                        <button
+                            className="chat__composer-cancel"
+                            type="button"
+                            onClick={cancelRequest}
+                        >
+                            Cancel
+                        </button>
+                    ) : (
+                        <button type="submit" disabled={!repoSession || !formData.trim()}>
+                            Send
+                        </button>
+                    )}
                 </form>
             </div>
         </div>

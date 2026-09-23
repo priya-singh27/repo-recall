@@ -25,6 +25,12 @@ const sendChatBot =  async (req,res) =>{
 
         res.write(`event: sources\ndata: ${JSON.stringify(sources)}\n\n`);
 
+        if (!sources.length) {
+            res.write(`event: text\ndata: ${JSON.stringify("No indexed code matched that question. Index files, then ask about a file or symbol in this repo.")}\n\n`);
+            res.write("event: done\ndata: {}\n\n");
+            return res.end();
+        }
+
         const stream = await ai.models.generateContentStream({
             model:process.env.GEMINI_CHAT_MODEL,
             contents:prompt,

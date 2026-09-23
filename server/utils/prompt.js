@@ -2,7 +2,7 @@ const get_prompt = (content, user_input) => {
     try{
         if(!content) return null;
 
-        const chunks = content.filter(item=>Number(item.distance)<0.5);
+        const chunks = content.filter(item=>Number(item.distance)<0.7);
         if(chunks.length>10){
             chunks.length=  10;
         }

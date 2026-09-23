@@ -242,14 +242,17 @@
   flex: 1;
   min-width: 0;
   min-height: 40px;
-  max-height: 160px;
   resize: none;
-  overflow-y: auto;
+  overflow: hidden;
   line-height: 1.5;
 }
 
 .chat__composer button {
   flex-shrink: 0;
+}
+
+.chat__composer-cancel {
+  background: var(--surface);
 }
 
 .chat__composer button:disabled {
@@ -283,9 +286,5 @@
   .chat__composer button {
     min-width: 44px;
     min-height: 44px;
-  }
-
-  .chat__composer textarea {
-    max-height: 28dvh;
   }
 }

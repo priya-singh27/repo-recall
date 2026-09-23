@@ -5,7 +5,7 @@ const downloadRepo = require('../utils/download_repo.utils');
 const { cacheKey, setRepoCache, getRepoCache } = require('../utils/repo_cache');
 const crypto = require('crypto');
 const { getIndexedFile, addIndexedFiles, updateContentHash, getAllIndexedFileForRepo, updateFilesActive, updateActive } = require('../repository/indexed_files.repository');
-const { insertPreparedChunks, chunkAndEmbed } = require('../utils/embed_repo_data');
+const { insertPreparedChunks, chunkAndEmbed, EMBED_MODEL } = require('../utils/embed_repo_data');
 const { unauthorizedResponse, badRequestResponse, successResponse, serverErrorResponse, externalServiceResponse, goneResponse } = require('../utils/response');
 const { pool } = require('../db/db_config');
 const { isTextFile } = require('../utils/text_file.utils');
@@ -43,7 +43,7 @@ const embed_content = async (req, res) => {
             const indexed_file = await getIndexedFile(repo_id,file);
             
             const content = entry.getContent();
-            const curr_content_hash= crypto.createHash('sha256').update(content,'utf-8').digest('hex')
+            const curr_content_hash= crypto.createHash('sha256').update(`${EMBED_MODEL}\n${content}`,'utf-8').digest('hex')
 
             //if the content hash is same
             if (indexed_file && indexed_file.content_hash === curr_content_hash) {

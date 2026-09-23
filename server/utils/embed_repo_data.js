@@ -4,7 +4,7 @@ require("dotenv").config();
 
 const EMBED_DIM = 768;
 const EMBED_BATCH = 20;
-const EMBED_MODEL = process.env.GEMINI_EMBED_MODEL || "text-embedding-004";
+const EMBED_MODEL = process.env.GEMINI_EMBED_MODEL || "gemini-embedding-001";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
@@ -112,5 +112,6 @@ const embed = async (data, taskType = "RETRIEVAL_QUERY") => {
 module.exports={
     insertPreparedChunks,
     chunkAndEmbed,
-    embed
+    embed,
+    EMBED_MODEL
 }

@@ -1,4 +1,12 @@
+const { GoogleGenAI } = require("@google/genai");
 const { addChunks } = require("../repository/chunks.repository");
+require("dotenv").config();
+
+const EMBED_DIM = 768;
+const EMBED_BATCH = 20;
+const EMBED_MODEL = process.env.GEMINI_EMBED_MODEL || "text-embedding-004";
+
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 const insertPreparedChunks = async(client, indexed_file_id, prepared)=>{
     try{
@@ -18,24 +26,72 @@ const insertPreparedChunks = async(client, indexed_file_id, prepared)=>{
     }
 }
 
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const embedBatch = async (texts, taskType) => {
+  if (!texts.length) return [];
+
+  let lastErr;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const response = await ai.models.embedContent({
+        model: EMBED_MODEL,
+        contents: texts,
+        config: {
+          outputDimensionality: EMBED_DIM,
+          taskType,
+        },
+      });
+
+      const embeddings = response.embeddings?.map((item) => item.values) ?? [];
+      if (embeddings.length !== texts.length || embeddings.some((item) => !item?.length)) {
+        throw new Error("Empty embedding from Gemini");
+      }
+      if (embeddings.some((item) => item.length !== EMBED_DIM)) {
+        throw new Error(`Gemini embedding must be ${EMBED_DIM} dimensions`);
+      }
+      return embeddings;
+    } catch (err) {
+      lastErr = err;
+      const retryable = /429|RESOURCE_EXHAUSTED|rate/i.test(err.message || "");
+      if (!retryable || attempt === 2) throw err;
+      await sleep(1000 * (attempt + 1));
+    }
+  }
+
+  throw lastErr;
+};
+
 const chunkAndEmbed = async (content) => {
   const lines = content.split('\n');
   const CHUNK_LINES = 40;
-  const prepared = [];
+  const pending = [];
 
   for (let start = 0; start < lines.length; start += CHUNK_LINES) {
     const end = Math.min(start + CHUNK_LINES, lines.length);
     const chunkData = lines.slice(start, end).join('\n');
     if (!chunkData.trim()) continue;
 
-    const embedding = await embed(chunkData);
-    if (!embedding?.length) throw new Error("Empty embedding from Ollama");
-
-    prepared.push({
+    pending.push({
       content: chunkData,
       start_line: start + 1,
       end_line: end,
-      embedding: JSON.stringify(embedding),
+    });
+  }
+
+  const prepared = [];
+  for (let i = 0; i < pending.length; i += EMBED_BATCH) {
+    const batch = pending.slice(i, i + EMBED_BATCH);
+    const embeddings = await embedBatch(
+      batch.map((chunk) => chunk.content),
+      "RETRIEVAL_DOCUMENT"
+    );
+
+    embeddings.forEach((embedding, index) => {
+      prepared.push({
+        ...batch[index],
+        embedding: JSON.stringify(embedding),
+      });
     });
   }
 
@@ -43,21 +99,9 @@ const chunkAndEmbed = async (content) => {
 };
 
 
-const embed = async (data) => {
+const embed = async (data, taskType = "RETRIEVAL_QUERY") => {
     try {
-        const ollamaRes = await fetch('http://localhost:11434/api/embeddings', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                model: 'nomic-embed-text',
-                prompt: data,
-            }),
-            signal: AbortSignal.timeout(10_000)
-        });
-        if (!ollamaRes.ok) {
-            throw new Error(`Ollama embeddings failed (${ollamaRes.status})`);
-        }
-        const { embedding } = await ollamaRes.json();
+        const [embedding] = await embedBatch([data], taskType);
         return embedding;
     } catch (err) {
         console.log(err);

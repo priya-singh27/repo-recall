@@ -18,3 +18,35 @@
 .file-tree__file--selected {
   color: var(--text);
 }
+
+.file-tree__file--open {
+  background: var(--bg);
+  border-radius: var(--radius);
+}
+
+.file-tree__open {
+  background: none;
+  border: none;
+  padding: 0;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.file-tree__open:hover {
+  color: var(--text);
+}
+
+@media (max-width: 720px) {
+  .file-tree__file {
+    min-height: 44px;
+  }
+
+  .file-tree__open {
+    min-height: 44px;
+    padding-inline: var(--space-1);
+  }
+}

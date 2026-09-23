@@ -3,12 +3,18 @@ import { useAuth } from './context/AuthContext'
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import {Homepage} from './pages/homepage/Homepage';
-import Chat from './pages/chat/Chat';
 import {Route, Routes, Navigate} from 'react-router'
+import Loader from './components/Loader/Loader';
 
 function App() {
   const {user, loading,logout} = useAuth();
-  if(loading) return <div>Loading...</div>;
+  if(loading) {
+    return (
+      <div className="app app--loading">
+        <Loader label="Loading" />
+      </div>
+    );
+  }
 
 
   return (//replace: deletes the original visit from the browswer's history stack.
@@ -27,7 +33,7 @@ function App() {
           <Route path='/signup' element={user ? <Navigate to='/' replace/>  : <Signup/>} />
 
           <Route path='/' element={user? <Homepage/> : <Navigate to="/login" replace />} />
-          <Route path='/chat' element={user? <Chat/>: <Navigate to="/login" replace/> }/>
+          <Route path='/chat' element={<Navigate to="/" replace/> }/>
 
           <Route path='*' element={<Navigate to="/" replace/>}/>
 

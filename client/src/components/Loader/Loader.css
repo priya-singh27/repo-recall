@@ -1,0 +1,33 @@
+.loader {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+.loader__spin {
+  width: 18px;
+  height: 18px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: loader-spin 0.6s linear infinite;
+}
+
+.loader__label {
+  font-size: var(--text-sm);
+}
+
+@keyframes loader-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loader__spin {
+    animation: none;
+    border-right-color: currentColor;
+    opacity: 0.6;
+  }
+}

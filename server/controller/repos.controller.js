@@ -188,9 +188,50 @@ const fetch_files = async (req, res) => {
     }
 }
 
+const fetch_file_content = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { github_url, branch, path } = req.body;
+        if (!github_url || !branch || !path) return badRequestResponse(res, "Bad Request");
+
+        const parsed = parseGithubUrl(github_url);
+        if (!parsed) return badRequestResponse(res, "Not a valid github url");
+        const { repo_name, owner } = parsed;
+
+        const cached = getRepoCache(cacheKey(userId, owner, repo_name, branch));
+        if (!cached) {
+            return goneResponse(res, "Session expired — pull files again");
+        }
+
+        const entry = cached.entries_arr.find((item) => item.path_ === path);
+        if (!entry || entry.isDir || !isTextFile(path)) {
+            return badRequestResponse(res, "File not found");
+        }
+
+        const content = entry.getContent();
+        const MAX = 200_000;
+        const truncated = content.length > MAX;
+
+        return successResponse(
+            res,
+            {
+                path,
+                name: entry.name,
+                content: truncated ? content.slice(0, MAX) : content,
+                truncated,
+            },
+            "File content retrieved"
+        );
+    } catch (err) {
+        console.log(err);
+        return serverErrorResponse(res, err.message);
+    }
+}
+
 module.exports = {
     fecth_repo,
     fetch_files,
-    embed_content
+    embed_content,
+    fetch_file_content
 }
 

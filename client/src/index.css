@@ -1,5 +1,5 @@
 :root {
-  --bg: #d9e0d2;
+  --bg: #e5e8e2;
   --surface: #ffffff;
   --text: #262627;
   --text-muted: #3d4a57;
@@ -18,12 +18,27 @@
   --space-5: 32px;
 
   --radius: 8px;
+
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
 }
 
 *,
 *::before,
 *::after {
   box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  touch-action: manipulation;
 }
 
 body {

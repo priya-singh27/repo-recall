@@ -1,6 +1,5 @@
-import { Navigate } from "react-router";
-import { useRepo } from "../../context/RepoContext";
 import { useEffect, useRef, useState } from "react";
+import { useRepo } from "../../context/RepoContext";
 import { useAuth } from "../../context/AuthContext";
 import ReactMarkdown from "react-markdown";
 import "./Chat.css";
@@ -15,22 +14,13 @@ export default function Chat(){
     const [formData, setFormData] = useState("");
     const [sending, setSending] = useState(false);
     const threadRef = useRef(null);
+    const inputRef = useRef(null);
 
     useEffect(() => {
         const thread = threadRef.current;
         if (!thread) return;
         thread.scrollTop = thread.scrollHeight;
     }, [messages]);
-
-    const files = repoSession?.files ?? [];
-    const filesSelected = repoSession?.filesSelected ?? [];
-    const selectedSet = new Set(filesSelected);
-    const indexedFiles = files.length > 0
-        ? files.filter((file) => selectedSet.has(file.path))
-        : filesSelected.map((path) => ({ path, name: path.split("/").pop() }));
-    const otherFiles = files.filter((file) => file.path && !selectedSet.has(file.path));
-
-    if(!repoSession) return <Navigate to="/" replace />
 
     const updateAssistant = (content, sources) => {
         setMessages((prev) => {
@@ -42,14 +32,28 @@ export default function Chat(){
         });
     };
     
+    useEffect(() => {
+        const el = inputRef.current;
+        if (!el) return;
+        el.style.height = "auto";
+        el.style.height = `${el.scrollHeight}px`;
+    }, [formData]);
+
     const handleInputChange = (e) => {
         setFormData(e.target.value);
+    }
+
+    const handleComposerKeyDown = (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            e.currentTarget.form?.requestSubmit();
+        }
     }
 
     const handleInputSubmit = async (e) =>{
         e.preventDefault();
         const user_input = formData.trim();
-        if (!user_input || sending) return;
+        if (!user_input || sending || !repoSession) return;
         setFormData("");
         setSending(true);
 
@@ -124,59 +128,44 @@ export default function Chat(){
 
     return(
         <div className="chat">
-            <header className="chat__repo">
-                <img className="chat__avatar" src={repoSession.owner.avatar_url} alt="" />
-                <div>
-                    <p className="chat__owner">{repoSession.owner.name}</p>
-                    <h1>{repoSession.repo.name}</h1>
-                </div>
-
-                <span className="chat__branch">{repoSession.repo.curr_branch}</span>
-            </header>
-
-            <div className="chat__body">
-                <aside className="chat__files">
-                    <h2>Indexed files</h2>
-                    <p className="chat__files-count">
-                        {indexedFiles.length} file{indexedFiles.length === 1 ? "" : "s"}
-                    </p>
-                    {indexedFiles.length === 0 ? (
-                        <p className="chat__files-count">No files indexed for this chat.</p>
-                    ) : (
-                        <ul className="chat__file-list">
-                            {indexedFiles.map((file) => (
-                                <li key={file.path} className="chat__file chat__file--indexed">
-                                    <span className="chat__file-name">{file.name || file.path.split("/").pop()}</span>
-                                    <span className="chat__file-path">{file.path}</span>
-                                </li>
-                            ))}
-                        </ul>
-                    )}
-                    {otherFiles.length > 0 && (
-                        <>
-                            <h2 className="chat__files-sub">Not indexed</h2>
-                            <ul className="chat__file-list">
-                                {otherFiles.map((file) => (
-                                    <li key={file.path} className="chat__file">
-                                        <span className="chat__file-name">{file.name || file.path.split("/").pop()}</span>
-                                        <span className="chat__file-path">{file.path}</span>
-                                    </li>
-                                ))}
-                            </ul>
-                        </>
-                    )}
-                </aside>
-
             <div className="chat__panel">
+            {repoSession && (
+                <header className="chat__repo">
+                    <img className="chat__avatar" src={repoSession.owner.avatar_url} alt="" />
+                    <div>
+                        <p className="chat__owner">{repoSession.owner.name}</p>
+                        <h1>{repoSession.repo.name}</h1>
+                    </div>
+                </header>
+            )}
                 <div className="chat__thread" ref={threadRef} aria-live="polite">
                     {messages.length === 0 && (
-                        <p className="chat__empty">Ask a question about this repo.</p>
+                        <div className="chat__empty">
+                            <img
+                                className="chat__bot chat__bot--empty"
+                                src="/chat_bot_icon.png"
+                                alt=""
+                            />
+                            <p>
+                            {repoSession
+                                ? "Ask a question about the indexed files."
+                                : "Enter a repo in the sidebar, pick files, and index them to start chatting."}
+                            </p>
+                        </div>
                     )}
                     {messages.map((message) => (
                         <article
                             key={message.id}
                             className={`chat__message chat__message--${message.role}`}
                         >
+                            {message.role === "assistant" && (
+                                <img
+                                    className="chat__bot"
+                                    src="/chat_bot_icon.png"
+                                    alt=""
+                                />
+                            )}
+                            <div className="chat__message-body">
                             <p className="chat__role">{message.role === "user" ? "You" : "repo-recall"}</p>
                             {message.role === "user" ? (
                                 <p className="chat__bubble">{message.content}</p>
@@ -184,7 +173,13 @@ export default function Chat(){
                                 <div className="chat__bubble">
                                     {message.content
                                         ? <ReactMarkdown>{message.content}</ReactMarkdown>
-                                        : <p className="chat__pending">Thinking…</p>}
+                                        : (
+                                          <div className="chat__pending" role="status" aria-label="Waiting for reply">
+                                            <span className="chat__pending-tick" />
+                                            <span className="chat__pending-tick" />
+                                            <span className="chat__pending-tick" />
+                                          </div>
+                                        )}
                                     {message.sources?.length > 0 && (
                                         <ul className="chat__sources">
                                             {message.sources.map((s) => (
@@ -196,27 +191,29 @@ export default function Chat(){
                                     )}
                                 </div>
                             )}
+                            </div>
                         </article>
                     ))}
                 </div>
 
                 <form className="chat__composer" onSubmit={handleInputSubmit}>
                     <label className="chat__label" htmlFor="user_input">Message</label>
-                    <input
+                    <textarea
                         id="user_input"
+                        ref={inputRef}
+                        rows={1}
                         onChange={handleInputChange}
-                        type="text"
+                        onKeyDown={handleComposerKeyDown}
                         value={formData}
-                        placeholder="Ask about this repo"
+                        placeholder={repoSession ? "Ask about this repo" : "Index files to chat"}
                         name="user_input"
                         autoComplete="off"
-                        disabled={sending}
+                        disabled={sending || !repoSession}
                     />
-                    <button type="submit" disabled={sending || !formData.trim()}>
-                        {sending ? "Sending" : "Send"}
+                    <button type="submit" disabled={sending || !repoSession || !formData.trim()}>
+                        Send
                     </button>
                 </form>
-            </div>
             </div>
         </div>
     )

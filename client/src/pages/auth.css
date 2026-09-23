@@ -34,3 +34,15 @@
 .auth__link {
   font-size: var(--text-sm);
 }
+
+@media (max-width: 720px) {
+  .auth h1 {
+    margin-bottom: var(--space-3);
+    font-size: var(--text-lg);
+  }
+
+  .auth__form button,
+  .auth__secondary {
+    min-height: 44px;
+  }
+}

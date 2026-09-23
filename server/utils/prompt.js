@@ -27,7 +27,7 @@ const get_prompt = (content, user_input) => {
         const prompt = 
         `
             You are a code assistant. Use ONLY the CONTEXT below.
-            If CONTEXT is empty or insufficient, say you don't know.
+            If CONTEXT is empty or insufficient, ask them to specifically mention what they want.
 
             CONTEXT:
             ${context || "(no relevant code found)"}

@@ -3,6 +3,7 @@ import { useAuth } from "../../context/AuthContext";
 import FileTree from "../../components/FileTree/FileTree";
 import { useRepo } from "../../context/RepoContext";
 import { useNavigate } from "react-router";
+import buildTree from "../../utils/buildTree";
 import './Homepage.css'
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -132,6 +133,7 @@ export function Homepage(){
         },
         
         filesSelected,
+        files: filesFetched.files,
       });
 
       navigate('/chat');
@@ -142,30 +144,6 @@ export function Homepage(){
         prev.includes(path) ? prev.filter((p) => p !== path) : [...prev, path]
       );
     };
-
-    function buildTree(files) {
-      const root = { name: "", children: {}, files: [] };
-    
-      for (const item of files) {
-        if (item.isDir) continue;
-    
-        const parts = item.path.split("/").filter(Boolean);
-        let node = root;
-    
-        // walk/create folder nodes
-        for (let i = 0; i < parts.length - 1; i++) {
-          const folder = parts[i];
-          if (!node.children[folder]) {
-            node.children[folder] = { name: folder, children: {}, files: [] };
-          }
-          node = node.children[folder];
-        }
-    
-        node.files.push(item);
-      }
-    
-      return root;
-    }
 
     
     return(

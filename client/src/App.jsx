@@ -22,7 +22,11 @@ function App() {
     <div className='app'>
       <header className='app__header'>
         <span className="app__title">repo-recall</span>
-        {user && <button onClick={logout}>Logout</button>}
+        {user && (
+          <button className="app__logout" type="button" onClick={logout}>
+            Log out
+          </button>
+        )}
       </header>
 
       <main className="app__main">

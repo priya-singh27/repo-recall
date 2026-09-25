@@ -1,4 +1,4 @@
-import {  useState } from "react";
+import { useRef, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import FileTree from "../../components/FileTree/FileTree";
 import { useRepo } from "../../context/RepoContext";
@@ -57,12 +57,14 @@ export function Homepage(){
     const [pulledBranch, setPulledBranch] = useState(repoSession?.repo?.curr_branch ?? "");
     const [loadedUrl, setLoadedUrl] = useState(repoSession?.github_url ?? "");
     const [pane, setPane] = useState(() => (repoSession ? "chat" : "files"));
+    const filesRequestRef = useRef(0);
 
     const indexed = Boolean(repoSession);
     const indexedSet = new Set(repoSession?.filesSelected ?? []);
     const previewOpen = Boolean(preview || previewError || loadingPreview);
 
     const resetWorkspace = () => {
+      filesRequestRef.current += 1;
       clearRepo();
       setFormData({ github_url: "" });
       setGithubData(null);
@@ -99,6 +101,44 @@ export function Homepage(){
       }))
     }
     
+    const pullFiles = async (branch) => {
+      if (!branch || indexed) return;
+      const request = ++filesRequestRef.current;
+      setLoadingFiles(true);
+      setCurrBranch(branch);
+
+      try {
+        const files_response = await fetch(`${API_URL}/repo/files`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            github_url: formData.github_url,
+            branch,
+          }),
+        });
+
+        const files = await files_response.json();
+        if (request !== filesRequestRef.current) return;
+        if (!files_response.ok) return;
+
+        const nextFiles = files.data.files;
+        setFileTree(buildTree(nextFiles));
+        setFilesFetched(files.data);
+        setPulledBranch(branch);
+        setPreview(null);
+        setPreviewError("");
+        setOpenPath(null);
+        setFilesSelected((prev) =>
+          prev.filter((path) => nextFiles.some((file) => file.path === path))
+        );
+      } finally {
+        if (request === filesRequestRef.current) setLoadingFiles(false);
+      }
+    };
+
     const handleSubmit = async(e) => {
       e.preventDefault();
       if (loadingBranches) return;
@@ -127,7 +167,7 @@ export function Homepage(){
         repo: json_data["data"].repo,
         branches,
       });
-      setCurrBranch((current) => current || branches?.[0]?.name || "");
+      setCurrBranch("");
       setLoadedUrl(formData.github_url);
       setPulledBranch("");
       setFilesFetched(null);
@@ -136,42 +176,6 @@ export function Homepage(){
       setOpenPath(null);
       } finally {
         setLoadingBranches(false);
-      }
-    }
-
-    const handleBranchSelect = async () => {
-      if (loadingFiles) return;
-      setLoadingFiles(true);
-
-      try {
-      const body = {
-        "github_url":formData.github_url,
-        "branch" : currBranch
-      }
-
-      const files_response = await fetch(`${API_URL}/repo/files`,{
-        method:'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization:`Bearer ${session.access_token}`
-        },
-        body: JSON.stringify(body)
-      });
-
-      const files = await files_response.json();
-      if (!files_response.ok) return;
-
-      const nextFiles = files.data.files;
-      const tree = buildTree(nextFiles);
-      setFileTree(tree);
-      setFilesFetched(files.data);
-      setPulledBranch(currBranch);
-      setPreview(null);
-      setPreviewError("");
-      setOpenPath(null);
-      setFilesSelected((prev) => prev.filter((path) => nextFiles.some((file) => file.path === path)));
-      } finally {
-        setLoadingFiles(false);
       }
     }
 
@@ -265,67 +269,107 @@ export function Homepage(){
 
     
     return(
-        <div className={`workspace${previewOpen ? " workspace--preview" : ""} workspace--pane-${pane}`}>
+        <div className={`workspace${indexed ? "" : " workspace--setup"}${previewOpen ? " workspace--preview" : ""} workspace--pane-${pane}`}>
           <aside className="workspace__sidebar">
+            {!indexed && (
+              <div className="workspace__setup-hero">
+                <img
+                  className="workspace__setup-bot"
+                  src="/chatbot_icon.png"
+                  alt=""
+                />
+              </div>
+            )}
             <section className="homepage__section">
               <form className="homepage__form" onSubmit={handleSubmit}>
                 <div className="homepage__url-row">
-                  <input
-                    onChange={handleInputChange}
-                    type="url"
-                    placeholder="enter your github url..."
-                    name="github_url"
-                    value={formData.github_url}
-                    disabled={indexed}
-                    readOnly={indexed}
-                  ></input>
-                  {(githubData || filesFetched || indexed) && (
-                    <button
-                      className="homepage__reset"
-                      type="button"
-                      onClick={resetWorkspace}
-                      aria-label="Reset"
-                      title="Reset"
-                    >
-                      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-                        <path
-                          fill="currentColor"
-                          d="M12 6V3L8 7l4 4V8c2.76 0 5 2.24 5 5a5 5 0 0 1-8.9 3.1L6.64 17.5A7 7 0 0 0 19 13c0-3.87-3.13-7-7-7z"
-                        />
-                      </svg>
-                    </button>
-                  )}
+                  <div className="homepage__field">
+                    <svg className="homepage__field-icon" viewBox="0 0 16 16" aria-hidden="true">
+                      <path
+                        fill="currentColor"
+                        d="M2 2.5A2.5 2.5 0 0 1 4.5 0h8.75a.75.75 0 0 1 .75.75v12.5a.75.75 0 0 1-.75.75h-2.5a.75.75 0 0 1 0-1.5h1.75v-2h-8a1 1 0 0 0-.714 1.7.75.75 0 1 1-1.072 1.05A2.495 2.495 0 0 1 2 11.5Zm10.5-1h-8a1 1 0 0 0-1 1v6.708A2.486 2.486 0 0 1 4.5 9h8ZM5 12.25a.25.25 0 0 1 .25-.25h3.5a.25.25 0 0 1 .25.25v.5a.25.25 0 0 1-.25.25h-3.5a.25.25 0 0 1-.25-.25Z"
+                      />
+                    </svg>
+                    <input
+                      onChange={handleInputChange}
+                      type="url"
+                      placeholder="https://github.com/owner/repo"
+                      name="github_url"
+                      value={formData.github_url}
+                      aria-label="GitHub repository URL"
+                      disabled={indexed}
+                      readOnly={indexed}
+                    ></input>
+                    {(githubData || filesFetched || indexed) && (
+                      <button
+                        className="homepage__icon-btn"
+                        type="button"
+                        onClick={resetWorkspace}
+                        aria-label="Reset"
+                        title="Reset"
+                      >
+                        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                          <path
+                            fill="currentColor"
+                            d="M12 6V3L8 7l4 4V8c2.76 0 5 2.24 5 5a5 5 0 0 1-8.9 3.1L6.64 17.5A7 7 0 0 0 19 13c0-3.87-3.13-7-7-7z"
+                          />
+                        </svg>
+                      </button>
+                    )}
+                    {!indexed && (!githubData || formData.github_url !== loadedUrl) && (
+                      <button
+                        className="homepage__icon-btn"
+                        type="submit"
+                        disabled={loadingBranches}
+                        aria-label="Get branches"
+                        title="Get branches"
+                      >
+                        {loadingBranches ? (
+                          <Loader />
+                        ) : (
+                          <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
+                            <path
+                              fill="currentColor"
+                              d="M13.22 7.72a.75.75 0 0 1 0 1.06l-4.5 4.5a.75.75 0 0 1-1.06-1.06L11.44 8.5H3.75a.75.75 0 0 1 0-1.5h7.69L7.66 4.28a.75.75 0 0 1 1.06-1.06l4.5 4.5Z"
+                            />
+                          </svg>
+                        )}
+                      </button>
+                    )}
+                  </div>
                 </div>
-                {!indexed && (!githubData || formData.github_url !== loadedUrl) && (
-                  <button type="submit" disabled={loadingBranches}>
-                    {loadingBranches ? <Loader label="Loading" /> : "Get Branches"}
-                  </button>
-                )}
               </form>
             </section>
 
             {githubData ? <section className="homepage__section">
-              <h2>Branch</h2>
-
               <div className="homepage__branch">
-                <select
-                  value={currBranch}
-                  disabled={indexed}
-                  onChange={(e)=>{
-                    setCurrBranch(e.target.value)
-                  }}>
-                  {githubData.branches.map((item) => (
-                    <option key={item.name} value={item.name}>
-                      {item.name}
-                    </option>
-                  ))}
-                </select>
-
-                {!indexed && currBranch !== pulledBranch && (
-                  <button onClick={handleBranchSelect} type="button" disabled={loadingFiles}>
-                    {loadingFiles ? <Loader label="Loading" /> : "Pull Files"}
-                  </button>
-                )}
+                <div className="homepage__field">
+                  <svg className="homepage__field-icon" viewBox="0 0 16 16" aria-hidden="true">
+                    <path
+                      fill="currentColor"
+                      d="M9.5 3.25a2.25 2.25 0 1 1 3 2.122V6A2.5 2.5 0 0 1 10 8.5H6a1 1 0 0 0-1 1v1.128a2.251 2.251 0 1 1-1.5 0V5.372a2.25 2.25 0 1 1 1.5 0v1.836A2.493 2.493 0 0 1 6 7h4a1 1 0 0 0 1-1v-.628A2.25 2.25 0 0 1 9.5 3.25Zm-6 0a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0Zm8.25-.75a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM4.25 12a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Z"
+                    />
+                  </svg>
+                  <select
+                    aria-label="Branch"
+                    value={currBranch}
+                    disabled={indexed}
+                    onChange={(e) => {
+                      pullFiles(e.target.value);
+                    }}>
+                    {!indexed && (
+                      <option value="" disabled>
+                        Select a branch
+                      </option>
+                    )}
+                    {githubData.branches.map((item) => (
+                      <option key={item.name} value={item.name}>
+                        {item.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {loadingFiles && <Loader label="Loading files" />}
               </div>
             </section>:"" }
 
@@ -364,11 +408,13 @@ export function Homepage(){
             }
           </aside>
 
+          {indexed && (
           <div className="workspace__main">
-            <Chat key={indexed ? repoSession.repo.repo_id : "new"} />
+            <Chat key={repoSession.repo.repo_id} />
           </div>
+          )}
 
-          {previewOpen && (
+          {indexed && previewOpen && (
             <button
               className="workspace__scrim"
               type="button"
@@ -377,7 +423,7 @@ export function Homepage(){
             />
           )}
 
-          {previewOpen && (
+          {indexed && previewOpen && (
           <aside className="workspace__preview">
             {loadingPreview ? (
               <>
@@ -447,6 +493,7 @@ export function Homepage(){
           </aside>
           )}
 
+          {indexed && (
           <nav className="workspace__nav" aria-label="Workspace">
             <button
               type="button"
@@ -475,6 +522,7 @@ export function Homepage(){
               </button>
             )}
           </nav>
+          )}
         </div>
     )
 }

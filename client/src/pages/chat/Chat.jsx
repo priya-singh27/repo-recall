@@ -156,7 +156,7 @@ export default function Chat(){
                         <div className="chat__empty">
                             <img
                                 className="chat__bot chat__bot--empty"
-                                src="/chat_bot_icon.png"
+                                src="/chatbot_icon.png"
                                 alt=""
                             />
                             <p>
@@ -174,7 +174,7 @@ export default function Chat(){
                             {message.role === "assistant" && (
                                 <img
                                     className="chat__bot"
-                                    src="/chat_bot_icon.png"
+                                    src="/chatbot_icon.png"
                                     alt=""
                                 />
                             )}
@@ -196,8 +196,8 @@ export default function Chat(){
                                     {message.sources?.length > 0 && (
                                         <ul className="chat__sources">
                                             {message.sources.map((s) => (
-                                                <li key={`${s.path}-${s.start_line}`}>
-                                                    {s.path} ({s.start_line}-{s.end_line})
+                                                <li key={`${s.id}-${s.path}-${s.start_line}`}>
+                                                    [{s.id}] {s.path} ({s.start_line}-{s.end_line})
                                                 </li>
                                             ))}
                                         </ul>
@@ -232,8 +232,19 @@ export default function Chat(){
                             Cancel
                         </button>
                     ) : (
-                        <button type="submit" disabled={!repoSession || !formData.trim()}>
-                            Send
+                        <button
+                            className="chat__send"
+                            type="submit"
+                            disabled={!repoSession || !formData.trim()}
+                            aria-label="Send"
+                            title="Send"
+                        >
+                            <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
+                                <path
+                                    fill="currentColor"
+                                    d="M8.22 2.72a.75.75 0 0 1 1.06 0l4.5 4.5a.75.75 0 0 1 0 1.06l-4.5 4.5a.75.75 0 1 1-1.06-1.06L11.44 8.75H2.75a.75.75 0 0 1 0-1.5h8.69L8.22 3.78a.75.75 0 0 1 0-1.06Z"
+                                />
+                            </svg>
                         </button>
                     )}
                 </form>

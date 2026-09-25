@@ -11,6 +11,51 @@
   grid-template-columns: minmax(220px, 280px) minmax(0, 1fr) minmax(260px, 34%);
 }
 
+.workspace--setup {
+  grid-template-columns: minmax(0, 520px);
+  justify-content: center;
+  align-content: center;
+}
+
+.workspace--setup .workspace__sidebar {
+  width: 100%;
+  max-height: 100%;
+  overflow: auto;
+  background: transparent;
+  border: none;
+  padding: var(--space-4) 0;
+}
+
+.workspace--setup .homepage__section {
+  margin-bottom: var(--space-3);
+}
+
+.workspace__setup-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: var(--space-5);
+}
+
+.workspace__setup-bot {
+  width: 148px;
+  height: 148px;
+  object-fit: contain;
+  background: none;
+  animation: workspace-bot-idle 2.8s var(--ease-in-out) infinite;
+}
+
+@keyframes workspace-bot-idle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workspace__setup-bot {
+    animation: none;
+  }
+}
+
 .workspace__sidebar,
 .workspace__main,
 .workspace__preview {
@@ -140,10 +185,55 @@
   gap: var(--space-2);
 }
 
-.homepage__form input,
-.homepage__branch select {
+.homepage__field {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
   width: 100%;
   min-width: 0;
+  background: var(--surface);
+  border: 1px solid var(--text);
+  border-radius: var(--radius);
+}
+
+.homepage__field input:not([type="checkbox"]):not([type="radio"]),
+.homepage__field select {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  appearance: none;
+  padding-block: 12px;
+  padding-inline: 10px 12px;
+}
+
+.homepage__field select {
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='none' stroke='%23262627' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 8 4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 36px;
+}
+
+.homepage__field input:focus,
+.homepage__field select:focus {
+  outline: none;
+}
+
+.homepage__field:focus-within {
+  box-shadow: 0 0 0 3px var(--ring);
+}
+
+.homepage__field input:-webkit-autofill,
+.homepage__field input:-webkit-autofill:hover,
+.homepage__field input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text);
+  caret-color: var(--text);
+  box-shadow: inset 0 0 0 1000px var(--surface);
+  transition: background-color 99999s ease-out 0s;
 }
 
 .homepage__files {
@@ -166,21 +256,47 @@
   gap: var(--space-2);
 }
 
-.homepage__url-row input {
+.homepage__url-row input,
+.homepage__field select {
   flex: 1;
   min-width: 0;
 }
 
-.homepage__reset {
+.homepage__field-icon {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin-left: 12px;
+  color: var(--text-muted);
+}
+
+.homepage__icon-btn {
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
+  margin-right: 4px;
   padding: 0;
-  background: var(--surface);
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.homepage__icon-btn:hover,
+.homepage__icon-btn:focus-visible {
   color: var(--text);
+}
+
+.homepage__icon-btn:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+}
+
+.homepage__icon-btn .loader__spin {
+  width: 14px;
+  height: 14px;
 }
 
 input:disabled,
@@ -216,6 +332,20 @@ select:disabled {
 }
 
 @media (max-width: 720px) {
+  .workspace--setup {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 1fr);
+  }
+
+  .workspace--setup .homepage__icon-btn {
+    width: 44px;
+    height: 44px;
+  }
+
+  .workspace--setup .workspace__sidebar {
+    display: flex;
+  }
+
   .workspace,
   .workspace--preview {
     grid-template-columns: 1fr;
@@ -277,11 +407,6 @@ select:disabled {
   .homepage__branch button,
   .homepage__section--files > button {
     min-height: 44px;
-  }
-
-  .homepage__reset {
-    width: 44px;
-    height: 44px;
   }
 }
 

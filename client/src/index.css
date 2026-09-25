@@ -1,10 +1,11 @@
 :root {
-  --bg: #e5e8e2;
+  --bg: #eef2e8;
   --surface: #ffffff;
-  --text: #262627;
-  --text-muted: #3d4a57;
-  --border: #8e8d7e;
-  --accent: #b0fd3d;
+  --text: #1e2418;
+  --text-muted: #5a6350;
+  --border: #c2cbb4;
+  --accent: #c5e086;
+  --ring: rgb(197 224 134 / 0.55);
 
   --text-sm: 13px;
   --text-md: 16px;
@@ -74,6 +75,29 @@ textarea {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: var(--space-2) var(--space-3);
+}
+
+input:not([type="checkbox"]):not([type="radio"]):focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--text);
+  box-shadow: 0 0 0 3px var(--ring);
+}
+
+input[type="checkbox"] {
+  accent-color: var(--text);
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  -webkit-text-fill-color: var(--text);
+  caret-color: var(--text);
+  box-shadow: inset 0 0 0 1000px var(--surface);
+  transition: background-color 99999s ease-out 0s;
 }
 
 button {

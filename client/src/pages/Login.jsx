@@ -9,6 +9,7 @@ export default function Login () {
         email:"",
         password:""
     });
+    const [error, setError] = useState("");
     const handleChange = (e) => {
         const {name, value} = e.target;
         setFormData((prev)=>({
@@ -18,31 +19,34 @@ export default function Login () {
     }
     const handleSubmit=async (e)=> {
         e.preventDefault();
-        const {data, error} = await login(formData.email, formData.password);
-        if(error){
-            console.log(error);
-
-        }else{
-            console.log(`Data: ${JSON.stringify(data)}`); 
+        setError("");
+        const {error: nextError} = await login(formData.email, formData.password);
+        if(nextError){
+            setError(nextError.message || "Could not sign in.");
         }
-        
     }
     return(
     <div className="auth">
-        <h1>Login</h1>
+        <div className="auth__hero">
+            <img className="auth__bot" src="/chatbot_icon.png" alt="" />
+        </div>
+        <h1 className="auth__title">Sign in</h1>
+        {error && <p className="auth__error">{error}</p>}
         <form className="auth__form" onSubmit={handleSubmit}>
            <label htmlFor='email'>Email</label>
-           <input type="email" id='email' name='email' onChange={handleChange} value={formData.email}></input>
+           <input type="email" id='email' name='email' onChange={handleChange} value={formData.email} autoComplete="email"></input>
 
            <label htmlFor='password'>Password</label>
-           <input type="password" id='password' name='password' onChange={handleChange} value={formData.password}></input>
+           <input type="password" id='password' name='password' onChange={handleChange} value={formData.password} autoComplete="current-password"></input>
 
-           <button type="submit">Sign In</button>
+           <button type="submit">Sign in</button>
         </form>
 
+        <p className="auth__split">or</p>
+
         <div className="auth__alt">
-            <button className="auth__secondary" type="button" onClick={()=> loginWithGoogle()}>Sign In With Google</button>
-            <Link className="auth__link" to="/signup">Sign up</Link>
+            <button className="auth__secondary" type="button" onClick={()=> loginWithGoogle()}>Continue with Google</button>
+            <p className="auth__link">No account? <Link to="/signup">Sign up</Link></p>
         </div>
     </div>)
 }

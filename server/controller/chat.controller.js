@@ -7,6 +7,11 @@ require('dotenv').config()
 
 const ai = new GoogleGenAI({apiKey:process.env.GEMINI_API_KEY});
 
+const sourcesUsedInAnswer = (answer, sources) => {
+    const ids = new Set([...(answer.matchAll(/\[(\d+)\]/g))].map((match) => Number(match[1])));
+    return (sources ?? []).filter((source) => ids.has(source.id));
+};
+
 const sendChatBot =  async (req,res) =>{
     try{
         const {user_input, repo_id} = req.body;
@@ -23,10 +28,9 @@ const sendChatBot =  async (req,res) =>{
         if(!prompt_res) return serverErrorResponse(res, "There was some error in prompt")
         const {prompt, sources} = prompt_res;
 
-        res.write(`event: sources\ndata: ${JSON.stringify(sources)}\n\n`);
-
         if (!sources.length) {
             res.write(`event: text\ndata: ${JSON.stringify("No indexed code matched that question. Index files, then ask about a file or symbol in this repo.")}\n\n`);
+            res.write(`event: sources\ndata: []\n\n`);
             res.write("event: done\ndata: {}\n\n");
             return res.end();
         }
@@ -36,11 +40,16 @@ const sendChatBot =  async (req,res) =>{
             contents:prompt,
         });//it will be js object 
 
+        let answer = "";
         for await (const chunk of stream){
             const data = chunk.text;
-            if(data) res.write(`event: text\ndata: ${JSON.stringify(chunk.text)}\n\n`);
+            if(data) {
+                answer += data;
+                res.write(`event: text\ndata: ${JSON.stringify(chunk.text)}\n\n`);
+            }
         }
 
+        res.write(`event: sources\ndata: ${JSON.stringify(sourcesUsedInAnswer(answer, sources))}\n\n`);
         res.write("event: done\ndata: {}\n\n");
 
         res.end();

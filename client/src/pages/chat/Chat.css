@@ -83,11 +83,8 @@
   width: 36px;
   height: 36px;
   flex-shrink: 0;
-  object-fit: cover;
-  object-position: center 42%;
-  border-radius: 50%;
-  overflow: hidden;
-  background: var(--bg);
+  object-fit: contain;
+  background: none;
 }
 
 .chat__bot--empty {
@@ -247,11 +244,27 @@
   line-height: 1.5;
 }
 
+.chat__composer textarea:focus {
+  outline: none;
+  border-color: var(--text);
+  box-shadow: 0 0 0 3px var(--ring);
+}
+
 .chat__composer button {
   flex-shrink: 0;
 }
 
+.chat__send {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius);
+}
+
 .chat__composer-cancel {
+  padding: 6px 10px;
+  font-size: var(--text-sm);
   background: var(--surface);
 }
 
@@ -283,8 +296,12 @@
     padding: var(--space-2);
   }
 
-  .chat__composer button {
-    min-width: 44px;
-    min-height: 44px;
+  .chat__send {
+    width: 40px;
+    height: 40px;
+  }
+
+  .chat__composer-cancel {
+    min-height: 36px;
   }
 }

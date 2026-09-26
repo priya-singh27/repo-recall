@@ -33,8 +33,14 @@ export function AuthProvider ({children}) {
 
     },[]);
 
+    const siteUrl = import.meta.env.VITE_SITE_URL || window.location.origin;
+
     async function  signUp (email, password){
-        return supabase.auth.signUp({email, password})
+        return supabase.auth.signUp({
+            email,
+            password,
+            options: { emailRedirectTo: siteUrl },
+        })
     }
 
     async function login(email, password) {
@@ -44,7 +50,7 @@ export function AuthProvider ({children}) {
     async function loginWithGoogle() {
         return supabase.auth.signInWithOAuth({
             provider:'google',
-            options:{redirectTo: window.location.origin}
+            options:{redirectTo: siteUrl}
         })
 
     }
